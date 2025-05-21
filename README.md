@@ -45,14 +45,17 @@ The other secret sauce was the harmonic mean calculation that controls the scori
 
 ## Example
 The closest voice in the trained models for the example/target.wav was af_heart.pt with the following stats.
+```
 af_heart.pt          Target Sim: 0.709, Self Sim: 0.978, Feature Sim: 0.47, Score: 81.22
-
+```
 Interpolation search gave a voice that had the following stats.
+```
 af_jessica.pt_if_sara.pt_0.10.pt Target Sim: 0.780, Self Sim: 0.973, Feature Sim: 0.34, Score: 84.20
-
+```
 The interpolation showed a big improvment. The population of interpolated voices is then used as the basis for standard deviation mutation of a supplied voice tensor. After 10,000 steps of random walking and replacing with the best, we get this.
+```
 Step:9371, Target Sim:0.917, Self Sim:0.971, Feature Sim:0.54, Score:92.99, Diversity:0.01
-
+```
 An improvement of 13.7% in similarity while still maintaining model stability and voice quality. Have a look in the examples below how it sounds.
 ### Target Audio File
 
