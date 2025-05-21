@@ -36,13 +36,6 @@ uv run main.py --target_text "The works the speaker says in the audio clip" --ta
 
 This will run an interpolation search for the best voices and put them in a folder labeled **interpolated** which you can use as the basis for a new random walk later. It will also continue a random walk afterwards.
 
-## Design
-By far the hardest thing to get right was the scoring function. Earlier attempts using Resemblyzer only resulted in overfitted garbage. Self similarity was important in keeping the model producing the same sounding input dispite different inputs. Self similarity represented stability in the model and was critical in evaluation.
-
-But even with self similarity and similarity presented by Resemblyzer it was not enough. I had to add an audio feature similarity comparision in order to prevent audio quality getting poor. What happened without this is the audio would pass similarity and self similarity checks but again sound like a metal basket of tools being thrown down stairs. The feature comparison made the difference and prevented over fitting to a random sound that apparently sounded similar to the target wav file.
-
-The other secret sauce was the harmonic mean calculation that controls the scoring. The harmonic mean allows for some backsliding on self similarity, feature similarity, and target similarity so long as the improvement goes the right way. This made exploring the space easier for the system instead of requiring that all three only improve, which led to quick and sad stagnation. I lowered the weighting on the feature similarity. I mainly need that to prevent the voice from going completely out of bounds.
-
 ## Example
 The closest voice in the trained models for the example/target.wav was af_heart.pt with the following stats.
 ```
@@ -69,6 +62,12 @@ https://github.com/user-attachments/assets/0d693c60-a9f4-43bc-bb36-409bd7391d79
 
 https://github.com/user-attachments/assets/e2f2a156-88a6-4b79-8cf0-5da70a4798c4
 
+## Design
+By far the hardest thing to get right was the scoring function. Earlier attempts using Resemblyzer only resulted in overfitted garbage. Self similarity was important in keeping the model producing the same sounding input dispite different inputs. Self similarity represented stability in the model and was critical in evaluation.
+
+But even with self similarity and similarity presented by Resemblyzer it was not enough. I had to add an audio feature similarity comparision in order to prevent audio quality getting poor. What happened without this is the audio would pass similarity and self similarity checks but again sound like a metal basket of tools being thrown down stairs. The feature comparison made the difference and prevented over fitting to a random sound that apparently sounded similar to the target wav file.
+
+The other secret sauce was the harmonic mean calculation that controls the scoring. The harmonic mean allows for some backsliding on self similarity, feature similarity, and target similarity so long as the improvement goes the right way. This made exploring the space easier for the system instead of requiring that all three only improve, which led to quick and sad stagnation. I lowered the weighting on the feature similarity. I mainly need that to prevent the voice from going completely out of bounds.
 
 ## Notes
 This does not run in parallel, but does adopt early returning on bad tensors. You can run multiple instances assuming you have the GPU/CPU for it. I can run about 2 in parallel on my 3070 laptop. The results are random. You can have some that led to incredible sounding results after stagnating for a long time, and others can crash and burn right away. Totally random. This is where a future genetic algorithum would be better. But the random walk proves out the theory.
