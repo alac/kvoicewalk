@@ -8,7 +8,7 @@ def main():
     parser = argparse.ArgumentParser(description="A random walk Kokoro voice cloner.")
 
     # Common required arguments
-    parser.add_argument("--target_text", type=str, help="The words contained in the target audio file. Ideally around 20 seconds or so long.")
+    parser.add_argument("--target_text", type=str, help="The words contained in the target audio file. Should be around 100-200 tokens (two sentences).")
 
     # Optional arguments
     parser.add_argument("--other_text", type=str,
