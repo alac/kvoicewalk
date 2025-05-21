@@ -4,15 +4,15 @@ KVoiceWalk tries to create new [Kokoro](https://github.com/hexgrad/kokoro) voice
 This project is only possible because of the incredible work of projects like [Kokoro](https://github.com/hexgrad/kokoro) and [Resemblyzer](https://github.com/resemble-ai/Resemblyzer). I was struck by how small the Kokoro style tensors were and wondered if it would be possible to "evolve" new voice tensors more similar to target audio. The results are promising and this scoring method could be a valid option for a future genetic algorithm. I wanted more voice options for Kokoro, and now I have them.
 
 ## Example Audio
-### Target Audio File (Generated Using A different text to speech library)
+#### Target Audio File (Generated Using A different text to speech library)
 
 https://github.com/user-attachments/assets/ecafe828-4fee-41dd-8fe6-1f766ad19f56
 
-### The Most Similar Stock Trained Voice From Kokoro, af_heart.pt. Similarity score of 71%
+#### The Most Similar Stock Trained Voice From Kokoro, af_heart.pt. Similarity score of 71%
 
 https://github.com/user-attachments/assets/0d693c60-a9f4-43bc-bb36-409bd7391d79
 
-### KVoiceWalk Generated Voice Tensor After 10,000 steps. Similarity score of 93% (From Resemblyzer)
+#### KVoiceWalk Generated Voice Tensor After 10,000 steps. Similarity score of 93% (From Resemblyzer)
 
 https://github.com/user-attachments/assets/b19559dd-712c-427d-8ec4-93ff26daaa92
 
