@@ -1,7 +1,7 @@
 # KVoiceWalk
-KVoiceWalk tries create new (Kokoro)[https://github.com/hexgrad/kokoro] voice style tensors that clones target voices by using a random walk algorithum and a hybrid scoring method that combines Resemblyzer similarity, feature extraction, and self similarity. This is meant to be a step towards a more advanced genetic algorithum and prove out the scoring funciton and general concept.
+KVoiceWalk tries create new [Kokoro](https://github.com/hexgrad/kokoro) voice style tensors that clones target voices by using a random walk algorithum and a hybrid scoring method that combines Resemblyzer similarity, feature extraction, and self similarity. This is meant to be a step towards a more advanced genetic algorithum and prove out the scoring funciton and general concept.
 
-This project is only possible because of the incredible work of projects like (Kokoro)[https://github.com/hexgrad/kokoro] and (Resemblyzer)[https://github.com/resemble-ai/Resemblyzer]. I was struck by how small the Kokoro style tensors were and wondered if it would be possible to "evolve" new voice tensors more similar to target audio. The results are promising and this scoring method could be a valid option for a future genetic algorithum. I wanted more voice options for Kokoro, and now I have them.
+This project is only possible because of the incredible work of projects like [Kokoro](https://github.com/hexgrad/kokoro) and [Resemblyzer](https://github.com/resemble-ai/Resemblyzer). I was struck by how small the Kokoro style tensors were and wondered if it would be possible to "evolve" new voice tensors more similar to target audio. The results are promising and this scoring method could be a valid option for a future genetic algorithum. I wanted more voice options for Kokoro, and now I have them.
 
 ## Usage
 1. Clone this repository
@@ -11,7 +11,7 @@ This project is only possible because of the incredible work of projects like (K
 ffmpeg -i input_file.wav -ar 24000 target.wav
 ```
 
-3. Use (uv)[https://docs.astral.sh/uv/] to run the applicaiton with arguments
+3. Use [uv](https://docs.astral.sh/uv/) to run the applicaiton with arguments
 
 ```bash
 uv run main.py --target_text "The old lighthouse keeper never imagined that one day he'd be guiding ships from the comfort of his living room, but with modern technology and an array of cameras, he did just that, sipping tea while the storm raged outside and gulls shrieked overhead." --target_audio ./example/target.wav
