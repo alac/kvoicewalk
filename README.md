@@ -55,20 +55,17 @@ Step:9371, Target Sim:0.917, Self Sim:0.971, Feature Sim:0.54, Score:92.99, Dive
 
 An improvement of 13.7% in similarity while still maintaining model stability and voice quality. Have a look in the examples below how it sounds.
 ### Target Audio File
-<audio controls>
-  <source src="/example/target.wav" type="audio/wav">
-  Your browser does not support the audio element.
-</audio>
+
+https://github.com/user-attachments/assets/ecafe828-4fee-41dd-8fe6-1f766ad19f56
+
 ### Most Similar Trained Voice
-<audio controls>
-  <source src="/example/baseline.wav" type="audio/wav">
-  Your browser does not support the audio element.
-</audio>
+
+https://github.com/user-attachments/assets/0d693c60-a9f4-43bc-bb36-409bd7391d79
+
 ### Audio Generated From Newly Created Voice Tensors
-<audio controls>
-  <source src="/example/generated.wav" type="audio/wav">
-  Your browser does not support the audio element.
-</audio>
+
+https://github.com/user-attachments/assets/e2f2a156-88a6-4b79-8cf0-5da70a4798c4
+
 
 ## Notes
 This does not run in parallel, but does adopt early returning on bad tensors. You can run multiple instances assuming you have the GPU/CPU for it. I can run about 2 in parallel on my 3070 laptop. The results are random. You can have some that led to incredible sounding results after stagnating for a long time, and others can crash and burn right away. Totally random. This is where a future genetic algorithum would be better. But the random walk proves out the theory.
