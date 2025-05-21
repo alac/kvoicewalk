@@ -4,7 +4,11 @@ KVoiceWalk tries create new [Kokoro](https://github.com/hexgrad/kokoro) voice st
 This project is only possible because of the incredible work of projects like [Kokoro](https://github.com/hexgrad/kokoro) and [Resemblyzer](https://github.com/resemble-ai/Resemblyzer). I was struck by how small the Kokoro style tensors were and wondered if it would be possible to "evolve" new voice tensors more similar to target audio. The results are promising and this scoring method could be a valid option for a future genetic algorithm. I wanted more voice options for Kokoro, and now I have them.
 
 ## Usage
-1. Clone this repository
+1. Clone this repository, change directory into it
+```bash
+git clone https://github.com/RobViren/kvoicewalk.git
+cd kvoicewalk
+```
 2. Convert your target audio into the proper format (or use example). KVoiceWalk expects 24000 Hz sample rate wav file for target audio. The target audio is ideally 20-30 seconds long and is a single speaker.
 
 ```bash
@@ -17,7 +21,7 @@ ffmpeg -i input_file.wav -ar 24000 target.wav
 uv run main.py --target_text "The old lighthouse keeper never imagined that one day he'd be guiding ships from the comfort of his living room, but with modern technology and an array of cameras, he did just that, sipping tea while the storm raged outside and gulls shrieked overhead." --target_audio ./example/target.wav
 ```
 
-4. KVoiceWalk will now go through each voice in the voices folder to find the closest matches to the target file. After narrowing that down it will begin to randomly guess and check voices keeping the best voice as the source for the random walk. It will log the progress and save audio and voice tensors to the **out** folder. You can then use these voice tensors in your other projects or generate some audio using the following command.
+4. KVoiceWalk will now go through each voice in the voices folder to find the closest matches to the target file. After narrowing that down using the **population_limit** argument, it will begin to randomly guess and check voices keeping the best voice as the source for the random walk. It will log the progress and save audio and voice tensors to the **out** folder. You can then use these voice tensors in your other projects or generate some audio using the following command.
 
 ```bash
 uv run main.py --test_voice /path/to/voice.pt --target_text "Your really awesome text you want spoken"
@@ -25,7 +29,7 @@ uv run main.py --test_voice /path/to/voice.pt --target_text "Your really awesome
 
 This will generate an audio file called out.wav using the supplied *.pt file you give it. This way you can easily test a variety of voice tensors and input text.
 
-Play with the command line arguments and find what works for you. This is a fairly random process and processing for a long time could suddenly result in a better outcome. I'm just figuring this out as well.
+Play with the command line arguments and find what works for you. This is a fairly random process and processing for a long time could suddenly result in a better outcome. You can create a folder of your favorite sounding voices from the other random walks and use that as the basis for interpolation or just use that as the source for the next random walk. You can pass **starting_voice** argument to tell the system exactly what to use as a base if you want. Playing around with the options can get you a voice closer to the stlye of the target.
 
 ## Interpolated Start
 KVoiceWalk has a function to interpolate around the trained voices and determine the best possible starting population of tensors to act as a guide for the random walk function to clone the target voice. Simply run the application as follows to run interpolation first. This does take awhile and having a beefy GPU will help with processing time.
