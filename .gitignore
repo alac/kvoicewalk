@@ -12,3 +12,4 @@ wheels/
 out/
 interpolated/
 /*.wav
+*.bin

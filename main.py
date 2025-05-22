@@ -3,6 +3,9 @@ import argparse
 import warnings
 import soundfile as sf
 from speech_generator import SpeechGenerator
+import os
+import numpy as np
+import torch
 
 def main():
     parser = argparse.ArgumentParser(description="A random walk Kokoro voice cloner.")
@@ -42,7 +45,29 @@ def main():
     group_test.add_argument("--test_voice", type=str,
                           help="Path to the voice tensor you want to test")
 
+    # Arguments for util mode
+    group_util = parser.add_argument_group('Utility Mode')
+    group_util.add_argument("--export_bin",
+                      help='Exports target voices in the --voice_folder directory',
+                      action='store_true')
     args = parser.parse_args()
+
+    # Export Utility
+    if args.export_bin:
+        if not args.voice_folder:
+            parser.error("--voice_folder is required to export a voices bin file")
+
+        voices = {}
+        for filename in os.listdir(args.voice_folder):
+            if filename.endswith('.pt'):
+                file_path = os.path.join(args.voice_folder, filename)
+                voice = torch.load(file_path)
+                voices[filename] = voice
+
+        with open("voices.bin", "wb") as f:
+            np.savez(f,**voices)
+
+        return
 
     # Validate arguments based on mode
     if args.test_voice:
