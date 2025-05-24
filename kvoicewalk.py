@@ -11,6 +11,8 @@ import numpy as np
 import torch
 import os
 
+OUT_DIR = os.environ.get("KVOICEWALK_OUT_DIR","./out")
+
 class KVoiceWalk:
     def __init__(self,target_audio: str,target_text: str,other_text:str,voice_folder:str,interpolate_start: bool,population_limit: int, starting_voice: str) -> None:
         self.target_text = target_text
@@ -28,8 +30,7 @@ class KVoiceWalk:
         self.starting_voice = self.voice_generator.starting_voice
 
     def random_walk(self,step_limit: int):
-        if not os.path.exists("./out"):
-            os.makedirs("./out")
+        os.makedirs(OUT_DIR,exist_ok=True)
 
         # Score Initial Voice
         best_voice = self.starting_voice
@@ -52,8 +53,8 @@ class KVoiceWalk:
                 best_voice = voice
                 tqdm.write(f'Step:{i:<4} Target Sim:{best_results["target_similarity"]:.3f} Self Sim:{best_results["self_similarity"]:.3f} Feature Sim:{best_results["feature_similarity"]:.3f} Score:{best_results["score"]:.2f} Diversity:{diversity:.2f}')
                 # Save results so folks can listen
-                torch.save(best_voice, f'out/{best_results["score"]:.2f}_{best_results["target_similarity"]:.2f}_{i}.pt')
-                sf.write(f'out/{best_results["score"]:.2f}_{best_results["target_similarity"]:.2f}_{i}.wav', best_results["audio"], 24000)
+                torch.save(best_voice, f'{OUT_DIR}/{best_results["score"]:.2f}_{best_results["target_similarity"]:.2f}_{i}.pt')
+                sf.write(f'{OUT_DIR}/{best_results["score"]:.2f}_{best_results["target_similarity"]:.2f}_{i}.wav', best_results["audio"], 24000)
 
     def score_voice(self,voice: torch.Tensor,min_similarity: float = 0.0) -> dict[str,Any]:
         """Using a harmonic mean calculation to provide a score for the voice in similarity"""
