@@ -23,7 +23,7 @@ class FitnessScorer:
         #Normalize and make higher = better
         feature_similarity = (100.0 - target_features_pentalty) / 100.0
         if feature_similarity < 0.0:
-            feature_similarity = 0.1
+            feature_similarity = 0.01
 
         values = [target_similarity, self_similarity, feature_similarity]
         # Playing around with the weights can greatly affect scoring and random walk behavior
