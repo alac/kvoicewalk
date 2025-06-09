@@ -23,8 +23,7 @@ git clone https://github.com/RobViren/kvoicewalk.git
 cd kvoicewalk
 uv venv --python 3.10
 source .venv/bin/activate # '.venv\Scripts\activate' if Windows
-uv pip install poetry
-poetry install
+uv sync
 ```
 ## Usage
 2. Convert your target audio into the proper format (or use example). KVoiceWalk expects 24000 Hz sample rate wav file for target audio. The target audio is ideally 20-30 seconds long and is a single speaker.
