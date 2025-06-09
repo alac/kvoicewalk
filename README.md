@@ -22,7 +22,7 @@ https://github.com/user-attachments/assets/b19559dd-712c-427d-8ec4-93ff26daaa92
 git clone https://github.com/RobViren/kvoicewalk.git
 cd kvoicewalk
 uv venv --python 3.10
-source .venv/bin/activate
+source .venv/bin/activate # '.venv\Scripts\activate' if Windows
 uv pip install poetry
 poetry install
 ```
