@@ -1,13 +1,15 @@
-from utilities.kvoicewalk import KVoiceWalk
 import argparse
-import soundfile as sf
-from utilities.speech_generator import SpeechGenerator
 import os
-import numpy as np
 
+import numpy as np
+import soundfile as sf
+
+from utilities.kvoicewalk import KVoiceWalk
 from utilities.pytorch_sanitizer import load_multiple_voices
+from utilities.speech_generator import SpeechGenerator
 from utilities.transcriber import transcribe
 
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def main():
     parser = argparse.ArgumentParser(description="A random walk Kokoro voice cloner.")
@@ -54,7 +56,7 @@ def main():
                       help='Exports target voices in the --voice_folder directory',
                       action='store_true')
     group_util.add_argument("--transcribe",
-                      help='Uses Faster-Whisper to quickly transcribe your target audio. Replaces --target_text')
+                      help='Transcribes your target audio with a copy going to ./texts. Replaces --target_text')
     args = parser.parse_args()
 
     # Export Utility

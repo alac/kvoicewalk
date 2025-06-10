@@ -1,9 +1,11 @@
 import argparse
 import datetime
 import os
-from datetime import time
 from pathlib import Path
+
 from faster_whisper import WhisperModel
+
+TEXTS_DIR = os.environ.get("KVOICEWALK_OUT_DIR", "../texts")
 
 def transcribe(input_audio):
     model_size = "large-v3"
@@ -29,13 +31,12 @@ def transcribe(input_audio):
             transcription += segment.text
             # print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text)) # Optional timestamps if parsing longer audio clips
 
-
-        transcription_output = Path("./texts") / str(f"{input_audio[:-4]}.txt")
+        transcription_output = Path(TEXTS_DIR / str(f"{input_audio[:-4]}.txt"))
         with open(f"{transcription_output}", "w") as file:
             file.write(f"{transcription}")
 
         end_time = datetime.datetime.now()
-        print(f"Transcription completed in {(end_time-start_time).total_seconds()} seconds")
+        print(f"Transcription completed in {(end_time - start_time).total_seconds()} seconds")
         print(f"Transcription available at ./texts/{input_audio[:-4]}.txt")
         print(f"{input_audio} Transcription:\n{transcription}")
         return
@@ -50,8 +51,8 @@ def main():
     # Common required arguments
     parser.add_argument("--output", type=str,
                         help="Filename or Folder for the target audio.\n"
-                        "Folders will transcribe all .wav.\n"
-                        "Transcripts will got to ./texts folder.")
+                             "Folders will transcribe all .wav.\n"
+                             "Transcripts will got to ./texts folder.")
 
     args = parser.parse_args()
 
@@ -70,6 +71,7 @@ def main():
             print(f"Input Format Error: {audio_path} must be a .wav file or a folder!")
     except Exception as e:
         print(f"Error: {e}")
+    print('Transcriptions finished.')
 
 if __name__ == "__main__":
     main()

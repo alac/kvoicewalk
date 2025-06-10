@@ -1,14 +1,16 @@
 import datetime
+import os
+import random
 from typing import Any
+
+import soundfile as sf
+import torch
+from tqdm import tqdm
+
 from utilities.fitness_scorer import FitnessScorer
 from utilities.initial_selector import InitialSelector
 from utilities.speech_generator import SpeechGenerator
 from utilities.voice_generator import VoiceGenerator
-import random
-from tqdm import tqdm
-import soundfile as sf
-import torch
-import os
 
 OUT_DIR = os.environ.get("KVOICEWALK_OUT_DIR", "../out")
 

@@ -1,7 +1,9 @@
-from kokoro import KPipeline
 import warnings
+
 import numpy as np
 import torch
+from kokoro import KPipeline
+
 
 class SpeechGenerator:
     def __init__(self):

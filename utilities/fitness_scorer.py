@@ -1,11 +1,13 @@
+# from scipy.spatial.distance import cosine
+from typing import Any
+
+import librosa
+import numpy as np
+import scipy.stats
+import soundfile as sf
 from numpy._typing import NDArray
 from resemblyzer import preprocess_wav, VoiceEncoder
-import numpy as np
-import librosa
-import scipy.stats
-from scipy.spatial.distance import cosine
-from typing import Any
-import soundfile as sf
+
 
 class FitnessScorer:
     def __init__(self,target_path: str):

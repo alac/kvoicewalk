@@ -1,7 +1,8 @@
+import os
 from typing import Union, Dict, Any, List, Optional
+
 import numpy as np
 import torch
-import os
 
 
 class SkipFileException(Exception):
