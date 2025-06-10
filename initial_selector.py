@@ -4,6 +4,9 @@ import numpy as np
 import torch
 import os
 
+from voice_utils import load_voice_safely
+
+
 class InitialSelector:
     def __init__(self,target_path: str, target_text: str, other_text: str, voice_folder: str = "./voices",) -> None:
         self.fitness_scorer = FitnessScorer(target_path)
@@ -12,11 +15,12 @@ class InitialSelector:
         for filename in os.listdir(voice_folder):
             if filename.endswith('.pt'):
                 file_path = os.path.join(voice_folder, filename)
-                voice = torch.load(file_path)
+                voice = load_voice_safely(file_path)
                 voices.append({
                     'name': filename,
                     'voice': voice
                 })
+
         self.voices = voices
         self.target_text = target_text
         self.other_text = other_text

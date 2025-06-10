@@ -5,7 +5,9 @@ import soundfile as sf
 from speech_generator import SpeechGenerator
 import os
 import numpy as np
-import torch
+
+from voice_utils import load_multiple_voices
+
 
 def main():
     parser = argparse.ArgumentParser(description="A random walk Kokoro voice cloner.")
@@ -57,12 +59,9 @@ def main():
         if not args.voice_folder:
             parser.error("--voice_folder is required to export a voices bin file")
 
-        voices = {}
-        for filename in os.listdir(args.voice_folder):
-            if filename.endswith('.pt'):
-                file_path = os.path.join(args.voice_folder, filename)
-                voice = torch.load(file_path)
-                voices[filename] = voice
+        # Collect all .pt file paths
+        file_paths = [os.path.join(args.voice_folder, f) for f in os.listdir(args.voice_folder) if f.endswith('.pt')]
+        voices = load_multiple_voices(file_paths, auto_allow_unsafe=False) # Set True if you prefer to bypass Allow/Repair/Reject voice file menu
 
         with open("voices.bin", "wb") as f:
             np.savez(f,**voices)
