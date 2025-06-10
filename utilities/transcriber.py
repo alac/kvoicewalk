@@ -39,7 +39,7 @@ def transcribe(input_audio):
         print(f"Transcription completed in {(end_time - start_time).total_seconds()} seconds")
         print(f"Transcription available at ./texts/{input_audio[:-4]}.txt")
         print(f"{input_audio} Transcription:\n{transcription}")
-        return
+        return transcription
 
     except Exception as e:
         print(f"Transcription failed for {input_audio} - Error: {e}")
