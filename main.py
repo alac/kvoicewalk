@@ -59,7 +59,7 @@ def main():
                       help='Exports target voices in the --voice_folder directory',
                       action='store_true')
     group_util.add_argument("--transcribe_many",
-                      help='Transcribes a target wav or wav folder. Individual transcriptions go to ./texts. Replaces')
+                      help='Transcribes a target wav or wav folder. Individual transcriptions go to ./texts. Replaces --target_text')
     args = parser.parse_args()
 
     # Main Mode
