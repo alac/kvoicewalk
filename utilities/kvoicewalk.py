@@ -62,8 +62,8 @@ class KVoiceWalk:
                 best_voice = voice
                 t.write(f'Step:{i:<4} Target Sim:{best_results["target_similarity"]:.3f} Self Sim:{best_results["self_similarity"]:.3f} Feature Sim:{best_results["feature_similarity"]:.3f} Score:{best_results["score"]:.2f} Diversity:{diversity:.2f}')
                 # Save results so folks can listen
-                torch.save(best_voice, f'{OUT_DIR}/{self.target_audio}_{best_voice}_{best_results["score"]:.2f}_{best_results["target_similarity"]:.2f}_{i}.pt')
-                sf.write(f'{OUT_DIR}/{best_results["score"]:.2f}_{best_results["target_similarity"]:.2f}_{i}.wav', best_results["audio"], 24000)
+                torch.save(best_voice, f'{results_dir}/{self.target_audio}_{best_voice}_{best_results["score"]:.2f}_{best_results["target_similarity"]:.2f}_{i}.pt')
+                sf.write(f'{results_dir}/{best_results["score"]:.2f}_{best_results["target_similarity"]:.2f}_{i}.wav', best_results["audio"], 24000)
 
         # Print Final Results for Random Walk
         print("Random Walk Final Results")
