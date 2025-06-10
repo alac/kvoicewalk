@@ -5,17 +5,20 @@ build/
 dist/
 wheels/
 *.egg-info
-
+/*.wav
+*.bin
 # Virtual environments
 .venv
 
-voices/
-out/
-interpolated/
-/*.wav
-*.bin
-
-# Keep original voices only
+# Folders (ignore everything in these folders)
+example/*
+out/*
+in/*
+interpolated/*
+texts/*
+voices/*
+#...except official Kokoro voice models
+# Upload original voices only
 !voices/af_alloy.pt
 !voices/af_aoede.pt
 !voices/af_bella.pt
@@ -70,3 +73,4 @@ interpolated/
 !voices/zm_yunxi.pt
 !voices/zm_yunxia.pt
 !voices/zm_yunyang.pt
+/in/

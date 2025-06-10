@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import os
 
-from voice_utils import load_voice_safely
+from pytorch_sanitizer import load_voice_safely
 
 
 class InitialSelector:

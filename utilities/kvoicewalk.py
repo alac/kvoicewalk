@@ -1,4 +1,3 @@
-
 from typing import Any
 from utilities.fitness_scorer import FitnessScorer
 from utilities.initial_selector import InitialSelector

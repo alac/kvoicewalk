@@ -5,7 +5,8 @@ from utilities.speech_generator import SpeechGenerator
 import os
 import numpy as np
 
-from utilities.pt_sanitizer import load_multiple_voices
+from utilities.pytorch_sanitizer import load_multiple_voices
+from utilities.transcriber import transcribe
 
 
 def main():
@@ -48,9 +49,12 @@ def main():
 
     # Arguments for util mode
     group_util = parser.add_argument_group('Utility Mode')
+    # TODO: Add ffmpeg file prep
     group_util.add_argument("--export_bin",
                       help='Exports target voices in the --voice_folder directory',
                       action='store_true')
+    group_util.add_argument("--transcribe",
+                      help='Uses Faster-Whisper to quickly transcribe your target audio. Replaces --target_text')
     args = parser.parse_args()
 
     # Export Utility
@@ -65,6 +69,10 @@ def main():
         with open("voices.bin", "wb") as f:
             np.savez(f,**voices)
 
+        return
+
+    if args.transcribe:
+        args.target_text = transcribe(args.output)
         return
 
     # Validate arguments based on mode
