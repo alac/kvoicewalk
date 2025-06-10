@@ -1,8 +1,13 @@
-from fitness_scorer import FitnessScorer
-from speech_generator import SpeechGenerator
+import os
+
 import numpy as np
 import torch
-import os
+
+from utilities.fitness_scorer import FitnessScorer
+from utilities.pytorch_sanitizer import load_voice_safely
+from utilities.speech_generator import SpeechGenerator
+
+INTERPOLATED_DIR = os.environ.get("KVOICEWALK_OUT_DIR", "../interpolated")
 
 class InitialSelector:
     def __init__(self,target_path: str, target_text: str, other_text: str, voice_folder: str = "./voices",) -> None:
@@ -12,11 +17,12 @@ class InitialSelector:
         for filename in os.listdir(voice_folder):
             if filename.endswith('.pt'):
                 file_path = os.path.join(voice_folder, filename)
-                voice = torch.load(file_path)
+                voice = load_voice_safely(file_path)
                 voices.append({
                     'name': filename,
                     'voice': voice
                 })
+
         self.voices = voices
         self.target_text = target_text
         self.other_text = other_text
@@ -82,11 +88,11 @@ class InitialSelector:
                             res[j] = (voice,iter,voices[j]["name"],voices[i]["name"],results)
 
         interpolated_voices: list[torch.Tensor] = []
-        if not os.path.exists("./interpolated"):
-            os.makedirs("./interpolated")
+        if not os.path.exists(INTERPOLATED_DIR):
+            os.makedirs(INTERPOLATED_DIR)
         for key, value in res.items():
             print(f'{key} {value[1]:.2f} {value[2]} {value[3]} {value[4]["score"]:.3f}')
-            torch.save(value[0],f"./interpolated/{value[2]}_{value[3]}_{value[1]:.2f}.pt")
+            torch.save(value[0],f"{INTERPOLATED_DIR}/{value[2]}_{value[3]}_{value[1]:.2f}.pt")
             interpolated_voices.append(value[0])
 
         return interpolated_voices

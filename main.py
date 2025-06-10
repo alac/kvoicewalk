@@ -1,17 +1,21 @@
-from kvoicewalk import KVoiceWalk
 import argparse
-import warnings
-import soundfile as sf
-from speech_generator import SpeechGenerator
 import os
+
 import numpy as np
-import torch
+import soundfile as sf
+
+from utilities.kvoicewalk import KVoiceWalk
+from utilities.pytorch_sanitizer import load_multiple_voices
+from utilities.speech_generator import SpeechGenerator
+from utilities.transcriber import transcribe
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def main():
     parser = argparse.ArgumentParser(description="A random walk Kokoro voice cloner.")
 
     # Common required arguments
-    parser.add_argument("--target_text", type=str, help="The words contained in the target audio file. Should be around 100-200 tokens (two sentences).")
+    parser.add_argument("--target_text", type=str, help="The words contained in the target audio file. Should be around 100-200 tokens (two sentences). Alternatively, can point to a txt file of the transcription.")
 
     # Optional arguments
     parser.add_argument("--other_text", type=str,
@@ -20,6 +24,9 @@ def main():
     parser.add_argument("--voice_folder", type=str,
                       help="Path to the voices you want to use as part of the random walk.",
                       default="./voices")
+    parser.add_argument("--transcribe_start",
+                      help="Transcribe audio file. Transcript. Replaces --target_text and copy txt goes into ./texts",
+                      action='store_true')
     parser.add_argument("--interpolate_start",
                       help="Goes through an interpolation search step before random walking",
                       action='store_true')
@@ -47,27 +54,68 @@ def main():
 
     # Arguments for util mode
     group_util = parser.add_argument_group('Utility Mode')
+    # TODO: Add ffmpeg file prep
     group_util.add_argument("--export_bin",
                       help='Exports target voices in the --voice_folder directory',
                       action='store_true')
+    group_util.add_argument("--transcribe_many",
+                      help='Transcribes a target wav or wav folder. Individual transcriptions go to ./texts. Replaces --target_text')
     args = parser.parse_args()
+
+    # Main Mode
+    if args.transcribe_start:
+        try:
+            if os.path.isfile(args.target_audio) and args.target_audio.endswith('.wav'):
+                args.target_text = transcribe(args.target_audio)
+            elif os.path.isdir(args.target_audio):
+                parser.error("--transcribe_start allows a wav file only. Perhaps you're looking for --transcribe_many?")
+            else:
+                parser.error("--transcribe_start allows a wav file only. Please check your file or path.")
+            return
+        except Exception as e:
+            print(f"Error during Transcription: {e}")
 
     # Export Utility
     if args.export_bin:
         if not args.voice_folder:
             parser.error("--voice_folder is required to export a voices bin file")
 
-        voices = {}
-        for filename in os.listdir(args.voice_folder):
-            if filename.endswith('.pt'):
-                file_path = os.path.join(args.voice_folder, filename)
-                voice = torch.load(file_path)
-                voices[filename] = voice
+        # Collect all .pt file paths
+        file_paths = [os.path.join(args.voice_folder, f) for f in os.listdir(args.voice_folder) if f.endswith('.pt')]
+        voices = load_multiple_voices(file_paths, auto_allow_unsafe=False) # Set True if you prefer to bypass Allow/Repair/Reject voice file menu
 
         with open("voices.bin", "wb") as f:
             np.savez(f,**voices)
 
         return
+
+    if args.transcribe_many:
+        try:
+            if os.path.isfile(args.transcribe_many) and args.target_audio.endswith('.wav'):
+                transcribe(args.transcribe_many)
+                return
+            elif os.path.isdir(args.transcribe_many):
+                for audio in args.transcribe_many:
+                    if audio.endswith('.wav'):
+                        transcribe(audio)
+                    else:
+                        print(f"File Format Error: {audio} is not a .wav file!")
+                        continue
+            else:
+                print(f"Input Format Error: {args.transcribe_many} must be a .wav file or a folder!")
+        except Exception as e:
+            print(f"Error during Transcription: {e}")
+
+    # If text file, read and assign transcription.
+    if args.target_text.endswith('.txt'):
+        try:
+            if (os.path.isfile(args.transcribe_many) and args.target_audio.endswith('.txt')):
+                with open(args.target_text, "r") as file:
+                    args.target_text = file.read()
+            else:
+                print(f"Input Format Error: {args.target_text} must be a txt string or a .txt file!!")
+        except Exception as e:
+            print(f"Error during target_text assignment: {e}")
 
     # Validate arguments based on mode
     if args.test_voice:
