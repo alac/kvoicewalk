@@ -16,7 +16,6 @@ class VoiceLoader:
         self.auto_allow_unsafe = auto_allow_unsafe
         self.auto_deny_unsafe = auto_deny_unsafe
         self.risky_files: List[str] = []
-        self.repaired_files: List[str] = []
 
     def safe_load_pt_file(self, file_path: str) -> Union[torch.Tensor, Dict[str, Any]]:
         """Safely load a .pt file with user interaction for unsafe files"""
@@ -66,7 +65,6 @@ class VoiceLoader:
                 f"\nOptions for {os.path.basename(file_path)}:\n"
                 f"[Y]es - Load unsafely\n"
                 f"[N]o - Skip this file\n"
-                f"[R]epair - Create safe copy and load\n"
                 f"[A]ll - Yes to all remaining files\n"
                 f"[D]eny - No to all remaining files\n"
                 f"[E]xit - Stop program\n"
@@ -90,8 +88,6 @@ class VoiceLoader:
             elif choice == 'Y':
                 self.risky_files.append(file_path)
                 return self._unsafe_load(file_path)
-            elif choice == 'R':
-                return self._repair_and_load(file_path)
             else:
                 print("Invalid choice. Please try again.")
 
@@ -103,33 +99,6 @@ class VoiceLoader:
             return data
         except Exception as final_error:
             raise RuntimeError(f"❌ Could not load {file_path}: {final_error}")
-
-    def _repair_and_load(self, file_path: str) -> Union[torch.Tensor, Dict[str, Any]]:
-        """Repair file by extracting tensor data and saving safely"""
-        try:
-            print(f"🔧 Repairing {file_path}...")
-
-            # Load unsafely to extract data
-            data = torch.load(file_path, weights_only=False)
-
-            # Convert to clean tensor
-            clean_tensor = self.convert_loaded_data_to_tensor(data)
-
-            # Save repaired version
-            safe_path = file_path.replace('.pt', '_safe.pt')
-            torch.save(clean_tensor, safe_path)
-
-            self.repaired_files.append(f"{file_path} -> {safe_path}")
-            print(f"✅ Repaired and saved as: {safe_path}")
-
-            # Load the safe version
-            return torch.load(safe_path, weights_only=True)
-
-        except Exception as repair_error:
-            print(f"❌ Repair failed: {repair_error}")
-            print("Falling back to unsafe loading...")
-            self.risky_files.append(file_path)
-            return self._unsafe_load(file_path)
 
     def convert_loaded_data_to_tensor(self, data: Union[torch.Tensor, Dict, np.ndarray]) -> torch.Tensor:
         """Convert loaded data to a PyTorch tensor regardless of original format"""
@@ -178,22 +147,14 @@ class VoiceLoader:
             return None
 
     def get_risk_report(self) -> str:
-        """Generate a report of risky files and repairs"""
+        """Generate a report of risky files"""
         report = []
 
         if self.risky_files:
             report.append("🚨 RISKY FILES LOADED:")
-            report.append("These files required unsafe loading. Consider repairing them.")
+            report.append("These files required unsafe loading. Consider redownloading or repairing them within a secure environment.")
             for file in self.risky_files:
                 report.append(f"  - {file}")
-
-        if self.repaired_files:
-            report.append("\n🔧 REPAIRED FILES:")
-            for repair in self.repaired_files:
-                report.append(f"  - {repair}")
-
-        if not self.risky_files and not self.repaired_files:
-            report.append("✅ All files loaded safely!")
 
         return "\n".join(report)
 
