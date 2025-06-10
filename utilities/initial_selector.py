@@ -1,4 +1,4 @@
-from fitness_scorer import FitnessScorer
+from utilities.fitness_scorer import FitnessScorer
 from speech_generator import SpeechGenerator
 import numpy as np
 import torch

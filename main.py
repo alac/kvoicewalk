@@ -1,12 +1,11 @@
-from kvoicewalk import KVoiceWalk
+from utilities.kvoicewalk import KVoiceWalk
 import argparse
-import warnings
 import soundfile as sf
-from speech_generator import SpeechGenerator
+from utilities.speech_generator import SpeechGenerator
 import os
 import numpy as np
 
-from voice_utils import load_multiple_voices
+from utilities.pt_sanitizer import load_multiple_voices
 
 
 def main():

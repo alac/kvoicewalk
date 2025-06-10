@@ -1,17 +1,16 @@
 
 from typing import Any
-from fitness_scorer import FitnessScorer
-from initial_selector import InitialSelector
+from utilities.fitness_scorer import FitnessScorer
+from utilities.initial_selector import InitialSelector
 from speech_generator import SpeechGenerator
-from voice_generator import VoiceGenerator
+from utilities.voice_generator import VoiceGenerator
 import random
 from tqdm import tqdm
 import soundfile as sf
-import numpy as np
 import torch
 import os
 
-OUT_DIR = os.environ.get("KVOICEWALK_OUT_DIR","./out")
+OUT_DIR = os.environ.get("KVOICEWALK_OUT_DIR", "../out")
 
 class KVoiceWalk:
     def __init__(self,target_audio: str,target_text: str,other_text:str,voice_folder:str,interpolate_start: bool,population_limit: int, starting_voice: str) -> None:
