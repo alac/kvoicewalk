@@ -3,9 +3,7 @@ import datetime
 import os
 from datetime import time
 from pathlib import Path
-
 from faster_whisper import WhisperModel
-
 
 def transcribe(input_audio):
     model_size = "large-v3"

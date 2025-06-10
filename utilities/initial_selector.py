@@ -1,10 +1,9 @@
 from utilities.fitness_scorer import FitnessScorer
-from speech_generator import SpeechGenerator
+from utilities.speech_generator import SpeechGenerator
+from utilities.pytorch_sanitizer import load_voice_safely
 import numpy as np
 import torch
 import os
-
-from pytorch_sanitizer import load_voice_safely
 
 
 class InitialSelector:

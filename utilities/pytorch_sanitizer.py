@@ -170,7 +170,7 @@ class VoiceLoader:
             if voice_tensor.numel() == 0:
                 raise ValueError(f"Loaded tensor is empty from {file_path}")
 
-            print(f"✅ Successfully loaded voice tensor with shape: {voice_tensor.shape}")
+            # print(f"✅ Successfully loaded voice tensor with shape: {voice_tensor.shape}")
             return voice_tensor
 
         except SkipFileException as e:
