@@ -42,7 +42,7 @@ class KVoiceWalk:
         t.write(f'Target Sim:{best_results["target_similarity"]:.3f}, Self Sim:{best_results["self_similarity"]:.3f}, Feature Sim:{best_results["feature_similarity"]:.2f}, Score:{best_results["score"]:.2f}')
 
         # Create Results Directory
-        results_dir = f"{OUT_DIR}/{self.target_audio}_{best_voice}_{datetime.date}"
+        results_dir = f"{OUT_DIR}/{self.target_audio}_{best_voice}_{datetime.datetime.now()}"
         os.makedirs(results_dir, exist_ok=True)
 
         # Random Walk Loop
