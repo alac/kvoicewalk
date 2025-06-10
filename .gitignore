@@ -9,6 +9,7 @@ wheels/
 *.bin
 # Virtual environments
 .venv
+.idea
 
 # Folders (ignore everything in these folders)
 example/*
@@ -17,6 +18,12 @@ in/*
 interpolated/*
 texts/*
 voices/*
+# Include folders even if empty
+!example/.gitkeep
+!out/.gitkeep
+!in/.gitkeep
+!interpolated/.gitkeep
+!texts/.gitkeep
 #...except official Kokoro voice models
 # Upload original voices only
 !voices/af_alloy.pt

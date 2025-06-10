@@ -1,5 +1,3 @@
-import datetime
-
 from utilities.kvoicewalk import KVoiceWalk
 import argparse
 import soundfile as sf
