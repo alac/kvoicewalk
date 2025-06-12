@@ -54,7 +54,6 @@ def main():
 
     # Arguments for util mode
     group_util = parser.add_argument_group('Utility Mode')
-    # TODO: Add ffmpeg file prep
     group_util.add_argument("--export_bin",
                       help='Exports target voices in the --voice_folder directory',
                       action='store_true')
