@@ -1,15 +1,15 @@
 import argparse
 import os
+from pathlib import Path
 
 import numpy as np
 import soundfile as sf
 
+from utilities.audio_processor import Transcriber, convert_to_wav_mono_24k
 from utilities.kvoicewalk import KVoiceWalk
 from utilities.pytorch_sanitizer import load_multiple_voices
 from utilities.speech_generator import SpeechGenerator
-from utilities.transcriber import transcribe
 
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def main():
     parser = argparse.ArgumentParser(description="A random walk Kokoro voice cloner.")
@@ -25,7 +25,7 @@ def main():
                       help="Path to the voices you want to use as part of the random walk.",
                       default="./voices")
     parser.add_argument("--transcribe_start",
-                      help="Transcribe audio file. Transcript. Replaces --target_text and copy txt goes into ./texts",
+                        help='Input: filepath to wav file\nOutput: Transcription .txt in ./texts\nTranscribes a target wav or wav folder and replaces --target_text',
                       action='store_true')
     parser.add_argument("--interpolate_start",
                       help="Goes through an interpolation search step before random walking",
@@ -36,9 +36,9 @@ def main():
     parser.add_argument("--step_limit", type=int,
                       help="Limits the amount of steps in the random walk",
                       default=10000)
-    parser.add_argument("--output", type=str,
+    parser.add_argument("--output_name", type=str,
                       help="Filename for the generated output audio",
-                      default="out.wav")
+                        default="my_new_voice")
 
     # Arguments for random walk mode
     group_walk = parser.add_argument_group('Random Walk Mode')
@@ -54,26 +54,13 @@ def main():
 
     # Arguments for util mode
     group_util = parser.add_argument_group('Utility Mode')
-    # TODO: Add ffmpeg file prep
     group_util.add_argument("--export_bin",
                       help='Exports target voices in the --voice_folder directory',
                       action='store_true')
     group_util.add_argument("--transcribe_many",
-                      help='Transcribes a target wav or wav folder. Individual transcriptions go to ./texts. Replaces --target_text')
+                            help='Input: filepath to wav file or folder\nOutput: Individualized transcriptions in ./texts folder\nTranscribes a target wav or wav folder. Replaces --target_text', )
     args = parser.parse_args()
 
-    # Main Mode
-    if args.transcribe_start:
-        try:
-            if os.path.isfile(args.target_audio) and args.target_audio.endswith('.wav'):
-                args.target_text = transcribe(args.target_audio)
-            elif os.path.isdir(args.target_audio):
-                parser.error("--transcribe_start allows a wav file only. Perhaps you're looking for --transcribe_many?")
-            else:
-                parser.error("--transcribe_start allows a wav file only. Please check your file or path.")
-            return
-        except Exception as e:
-            print(f"Error during Transcription: {e}")
 
     # Export Utility
     if args.export_bin:
@@ -89,33 +76,88 @@ def main():
 
         return
 
+    # Handle target_audio input - convert to mono wav 24K automatically
+    if args.target_audio:
+        try:
+            target_audio_path = Path(args.target_audio)
+            if target_audio_path.is_file():
+                args.target_audio = convert_to_wav_mono_24k(target_audio_path)
+            else:
+                print(f"File not found: {target_audio_path}")
+        except Exception as e:
+            print(f"Error reading target_audio file: {e}")
+
+    # Transcribe (Start Mode)
+    if args.transcribe_start:
+        try:
+            target_path = Path(args.target_audio)
+
+            if target_path.is_file():
+                if target_path.suffix.lower() == '.wav':
+                    print(f"Sending {target_path.name} for transcription")
+                    transcriber = Transcriber()
+                    args.target_text = transcriber.transcribe(audio_path=target_path)
+                else:
+                    try:
+                        args.target_audio = convert_to_wav_mono_24k(target_path)
+                        transcriber = Transcriber()
+                        args.target_text = transcriber.transcribe(audio_path=target_path)
+                    except:
+                        parser.error(f"File format error: {target_path.name} is not a .wav file.")
+            elif target_path.is_dir():
+                parser.error("--transcribe_start requires a .wav file only. Use --transcribe_many for directories.")
+            else:
+                parser.error(f"File not found: {target_path}. Please check your file path.")
+
+        except Exception as e:
+            print(f"Error during transcription: {e}")
+            return
+
+    # Transcribe (Utility Mode)
     if args.transcribe_many:
         try:
-            if os.path.isfile(args.transcribe_many) and args.target_audio.endswith('.wav'):
-                transcribe(args.transcribe_many)
-                return
-            elif os.path.isdir(args.transcribe_many):
-                for audio in args.transcribe_many:
-                    if audio.endswith('.wav'):
-                        transcribe(audio)
-                    else:
-                        print(f"File Format Error: {audio} is not a .wav file!")
-                        continue
-            else:
-                print(f"Input Format Error: {args.transcribe_many} must be a .wav file or a folder!")
-        except Exception as e:
-            print(f"Error during Transcription: {e}")
+            input_path = Path(args.transcribe_many)
 
-    # If text file, read and assign transcription.
-    if args.target_text.endswith('.txt'):
-        try:
-            if (os.path.isfile(args.transcribe_many) and args.target_audio.endswith('.txt')):
-                with open(args.target_text, "r") as file:
-                    args.target_text = file.read()
+            if input_path.is_file():
+                if input_path.suffix.lower() == '.wav':
+                    print(f"Sending {input_path.name} for transcription")
+                    transcriber = Transcriber()
+                    transcriber.transcribe(audio_path=input_path)
+                else:
+                    print(f"File Format Error: {input_path.name} is not an audio file!")
+                return
+
+            elif input_path.is_dir():
+                wav_files = list(input_path.glob('*.wav'))
+                if not wav_files:
+                    # TODO: Handle batch processing of non-wav audios
+                    print(f"No .wav files found in {input_path}")
+                    return
+
+                transcriber = Transcriber()
+                for audio_file in wav_files:
+                    print(f"Sending {audio_file.name} for transcription")
+                    transcriber.transcribe(audio_path=audio_file)
+                return
+
             else:
-                print(f"Input Format Error: {args.target_text} must be a txt string or a .txt file!!")
+                print(f"Input Format Error: {input_path.name} must be a .wav file or a directory!")
+                return
+
         except Exception as e:
-            print(f"Error during target_text assignment: {e}")
+            print(f"Error during transcription: {e}")
+            return
+
+    # Handle text input - read from file if it's a .txt file path
+    if args.target_text and args.target_text.endswith('.txt'):
+        try:
+            text_path = Path(args.target_text)
+            if text_path.is_file():
+                args.target_text = text_path.read_text(encoding='utf-8')
+            else:
+                print(f"File not found: {text_path}")
+        except Exception as e:
+            print(f"Error reading text file: {e}")
 
     # Validate arguments based on mode
     if args.test_voice:
@@ -125,7 +167,7 @@ def main():
 
         speech_generator = SpeechGenerator()
         audio = speech_generator.generate_audio(args.target_text, args.test_voice)
-        sf.write(args.output, audio, 24000)
+        sf.write(args.output_name, audio, 24000)
     else:
         # Random walk mode
         if not args.target_audio:
@@ -139,7 +181,8 @@ def main():
                         args.voice_folder,
                         args.interpolate_start,
                         args.population_limit,
-                        args.starting_voice)
+                         args.starting_voice,
+                         args.output_name)
         ktb.random_walk(args.step_limit)
 
 if __name__ == "__main__":
