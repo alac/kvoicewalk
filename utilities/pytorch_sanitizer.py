@@ -24,7 +24,7 @@ class VoiceLoader:
         # Try safe loading first
         try:
             data = torch.load(file_path, weights_only=True)
-            print(f"✅ Loaded {file_path} with weights_only=True")
+            print(f"✅  Safely Loaded {file_path} with weights_only=True")
             return data
         except Exception as safe_error:
             print(f"⚠️  Safe loading failed: {safe_error}")
@@ -38,7 +38,7 @@ class VoiceLoader:
                 np.core.multiarray.scalar,
             ]):
                 data = torch.load(file_path)
-                print(f"✅ Loaded {file_path} with numpy globals allowed")
+                print(f"✅  Safely Loaded {file_path} with numpy globals allowed")
                 return data
         except Exception as numpy_error:
             print(f"⚠️  Numpy-safe loading failed: {numpy_error}")
@@ -96,7 +96,7 @@ class VoiceLoader:
         """Perform unsafe loading"""
         try:
             data = torch.load(file_path, weights_only=False)
-            print(f"✅ Loaded {file_path} with weights_only=False")
+            print(f"✅  Loaded {file_path} with weights_only=False")
             return data
         except Exception as final_error:
             raise RuntimeError(f"❌ Could not load {file_path}: {final_error}")

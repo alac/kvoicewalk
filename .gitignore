@@ -13,19 +13,27 @@ wheels/
 
 # Folders (ignore everything in these folders)
 example/*
+example/**/*
 out/*
+out/**/*
 in/*
+in/**/*
 interpolated/*
+interpolated/**/*
 texts/*
+texts/**/*
 voices/*
+voices/**/*
 # Include folders even if empty
-!example/.gitkeep
-!out/.gitkeep
-!in/.gitkeep
-!interpolated/.gitkeep
-!texts/.gitkeep
+!example/**/.gitkeep
+!out/**/.gitkeep
+!in/**/.gitkeep
+!interpolated/**/.gitkeep
+!texts/**/.gitkeep
+!voices/**/.gitkeep
 #...except official Kokoro voice models
 # Upload original voices only
+!example/target.wav
 !voices/af_alloy.pt
 !voices/af_aoede.pt
 !voices/af_bella.pt
@@ -80,4 +88,3 @@ voices/*
 !voices/zm_yunxi.pt
 !voices/zm_yunxia.pt
 !voices/zm_yunyang.pt
-/in/
