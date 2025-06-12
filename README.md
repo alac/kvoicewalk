@@ -26,7 +26,7 @@ source .venv/bin/activate # '.venv\Scripts\activate' if Windows
 uv sync
 ```
 ## Usage
-2. Convert your target audio into the proper format (or use example). KVoiceWalk expects 24000 Hz sample rate wav file for target audio. The target audio is ideally 20-30 seconds long and is a single speaker.
+2. KVoiceWalk expects target audio files to be in Mono 24000 Hz sample rate wav file format; ideally 20-30 seconds of a single speaker. However if needed, Kvoicewalk will check and convert target audio files into the proper format. If you would prefer to prepare them beforehand, you can this use this example ffmpeg command. 
 
 ```bash
 ffmpeg -i input_file.wav -ar 24000 target.wav
@@ -126,7 +126,7 @@ uv run main.py --voices_folder ./voices --export_bin
 
 "--voice_folder", type=str, help="Path to the voices you want to use as part of the random walk.", default="./voices"
 
-"--transcribe_start", help="Transcribe audio file. Transcript. Replaces --target_text and copy txt goes into ./texts", action='store_true'
+"--transcribe_start", help="Input: filepath to wav file Output: Transcription .txt in ./texts Transcribes a target wav or wav folder and replaces --target_text''
 
 "--interpolate_start", help="Goes through an interpolation search step before random walking", action='store_true'
 
@@ -134,7 +134,7 @@ uv run main.py --voices_folder ./voices --export_bin
 
 "--step_limit", type=int, help="Limits the amount of steps in the random walk", default=10000)
 
-"--output", type=str, help="Filename for the generated output audio", default="out.wav")
+"--output_name", type=str, help="Filename for the generated output audio", default="out.wav")
 
 ## Arguments for Random Walk mode
 "--target_audio", type=str, help="Path to the target audio file. Must be 24000 Hz mono wav file."
@@ -147,4 +147,4 @@ uv run main.py --voices_folder ./voices --export_bin
 ## Arguments for Util mode
 "--export_bin", help='Exports target voices in the --voice_folder directory', action='store_true'
 
-"--transcribe_many", help='Transcribes a target wav or wav folder. Individual transcriptions go to ./texts. Replaces --target_text
+"--transcribe_many", help='Input: filepath to wav file or folder\nOutput: Individualized transcriptions in ./texts folder\nTranscribes a target wav or wav folder. Replaces --target_text'
