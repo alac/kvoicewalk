@@ -10,6 +10,10 @@ wheels/
 .venv
 
 out/
+voices/
+voices_og/
+genned_voices/
+
 interpolated/
 /*.wav
 *.bin
