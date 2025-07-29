@@ -48,4 +48,14 @@ class VoiceGenerator:
 
         return new_tensor
 
-    #TODO: Make more voice genration functions
+    def crossover(self, parent1: torch.Tensor, parent2: torch.Tensor):
+        """Perform a single point crossover between two parent tensors."""
+        point = random.randint(1, parent1.size(0) - 1)
+        child1 = torch.cat((parent1[:point], parent2[point:]), dim=0)
+        child2 = torch.cat((parent2[:point], parent1[point:]), dim=0)
+        return child1, child2
+
+    def mutate(self, voice: torch.Tensor, mutation_strength: float = 0.05):
+        """Apply mutation to a voice tensor."""
+        mutation = torch.randn_like(voice) * self.std * mutation_strength
+        return voice + mutation

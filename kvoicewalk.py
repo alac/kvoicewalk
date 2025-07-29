@@ -1,4 +1,3 @@
-
 from typing import Any
 from fitness_scorer import FitnessScorer
 from initial_selector import InitialSelector
@@ -27,33 +26,60 @@ class KVoiceWalk:
         # Either the mean or the supplied voice tensor
         self.starting_voice = self.voice_generator.starting_voice
 
-    def random_walk(self,step_limit: int):
+    def genetic_algorithm(self, generations: int, population_size: int, mutation_rate: float, crossover_rate: float, elitism_count: int):
         if not os.path.exists("./out"):
             os.makedirs("./out")
 
-        # Score Initial Voice
-        best_voice = self.starting_voice
-        best_results = self.score_voice(self.starting_voice)
-        tqdm.write(f'Target Sim:{best_results["target_similarity"]:.3f}, Self Sim:{best_results["self_similarity"]:.3f}, Feature Sim:{best_results["feature_similarity"]:.2f}, Score:{best_results["score"]:.2f}')
+        # Initialize population
+        population = [self.voice_generator.generate_voice(self.starting_voice, diversity=random.uniform(0.1, 0.5)) for _ in range(population_size)]
+        
+        for generation in range(generations):
+            # Score population
+            scores = [self.score_voice(voice) for voice in tqdm(population, desc=f"Generation {generation+1}/{generations}")]
+            
+            # Sort population by score
+            scored_population = sorted(zip(scores, population), key=lambda x: x[0]["score"], reverse=True)
+            
+            tqdm.write(f'Generation {generation+1} Best Score: {scored_population[0][0]["score"]:.2f}')
 
-        # Random Walk Loop
-        for i in tqdm(range(step_limit)):
-            # TODO: Expose to CLI
-            diversity = random.uniform(0.01,0.15)
-            voice = self.voice_generator.generate_voice(best_voice,diversity)
+            new_population = []
 
-            # Early function return saves audio generation compute
-            min_similarity = best_results["target_similarity"] * 0.98
-            voice_results = self.score_voice(voice,min_similarity)
+            # Elitism
+            for i in range(elitism_count):
+                new_population.append(scored_population[i][1])
 
-            # Set new winner if score is better
-            if voice_results["score"] > best_results["score"]:
-                best_results = voice_results
-                best_voice = voice
-                tqdm.write(f'Step:{i:<4} Target Sim:{best_results["target_similarity"]:.3f} Self Sim:{best_results["self_similarity"]:.3f} Feature Sim:{best_results["feature_similarity"]:.3f} Score:{best_results["score"]:.2f} Diversity:{diversity:.2f}')
-                # Save results so folks can listen
-                torch.save(best_voice, f'out/{best_results["score"]:.2f}_{best_results["target_similarity"]:.2f}_{i}.pt')
-                sf.write(f'out/{best_results["score"]:.2f}_{best_results["target_similarity"]:.2f}_{i}.wav', best_results["audio"], 24000)
+            # Selection, Crossover, and Mutation
+            while len(new_population) < population_size:
+                # Tournament Selection
+                parent1 = self.tournament_selection(scored_population)
+                parent2 = self.tournament_selection(scored_population)
+
+                # Crossover
+                if random.random() < crossover_rate:
+                    child1, child2 = self.voice_generator.crossover(parent1, parent2)
+                else:
+                    child1, child2 = parent1, parent2
+
+                # Mutation
+                if random.random() < mutation_rate:
+                    child1 = self.voice_generator.mutate(child1)
+                if random.random() < mutation_rate:
+                    child2 = self.voice_generator.mutate(child2)
+                
+                new_population.extend([child1, child2])
+
+            population = new_population[:population_size]
+
+            # Save best voice of the generation
+            best_voice = scored_population[0][1]
+            best_score = scored_population[0][0]
+            torch.save(best_voice, f'out/gen_{generation+1}_best_voice_{best_score["score"]:.2f}.pt')
+            sf.write(f'out/gen_{generation+1}_best_voice_{best_score["score"]:.2f}.wav', self.score_voice(best_voice)['audio'], 24000)
+
+    def tournament_selection(self, scored_population, k=5):
+        tournament_entrants = random.sample(scored_population, k)
+        winner = max(tournament_entrants, key=lambda x: x[0]["score"])
+        return winner[1]
 
     def score_voice(self,voice: torch.Tensor,min_similarity: float = 0.0) -> dict[str,Any]:
         """Using a harmonic mean calculation to provide a score for the voice in similarity"""
