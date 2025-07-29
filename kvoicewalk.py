@@ -10,6 +10,9 @@ import numpy as np
 import torch
 import os
 
+# --- Add this line at the top of the file ---
+TENSOR_SHAPE_DEBUG_FLAG = False
+
 class KVoiceWalk:
     def __init__(self,target_audio: str,target_text: str,other_text:str,voice_folder:str,interpolate_start: bool,population_limit: int, starting_voice: str) -> None:
         self.target_text = target_text
@@ -113,6 +116,8 @@ class KVoiceWalk:
 
     def score_voice(self, voice: torch.Tensor, min_similarity: float = 0.0, population: List[torch.Tensor] = [], diversity_weight: float = 0.0) -> dict[str, Any]:
         """Scores a voice based on similarity, with an optional penalty for being too similar to the rest of the population."""
+        global TENSOR_SHAPE_DEBUG_FLAG # Use the global flag to ensure this runs only once
+
         audio = self.speech_generator.generate_audio(self.target_text, voice)
         target_similarity = self.fitness_scorer.target_similarity(audio)
         results: dict[str, Any] = {'audio': audio}
@@ -131,9 +136,32 @@ class KVoiceWalk:
 
         # --- Diversity Penalty Calculation ---
         if diversity_weight > 0 and len(population) > 1:
-            # Use cosine similarity to measure how similar this voice is to others
-            similarities = torch.tensor([torch.nn.functional.cosine_similarity(voice, other, dim=0) for other in population if not torch.equal(voice, other)])
-            
+            # --- START DEBUGGING BLOCK ---
+            if TENSOR_SHAPE_DEBUG_FLAG:
+                print("\n--- KVoiceWalk Debugging ---")
+                print(f"Shape of 'voice' tensor: {voice.shape}")
+                # Find a different tensor in the population to compare against
+                other_sample = next((p for p in population if not torch.equal(voice, p)), None)
+                if other_sample is not None:
+                    print(f"Shape of 'other' tensor sample: {other_sample.shape}")
+                    try:
+                        # Ensure both tensors are 2D for the comparison
+                        sim_result = torch.nn.functional.cosine_similarity(voice.unsqueeze(0), other_sample.unsqueeze(0), dim=-1)
+                        print(f"Shape of cosine_similarity result: {sim_result.shape}")
+                        if sim_result.numel() > 1:
+                            print("!!! WARNING: cosine_similarity is returning a multi-element tensor.")
+                        else:
+                            print("--> Cosine similarity result is a scalar tensor, as expected.")
+                    except Exception as e:
+                        print(f"XXX Error during sample similarity calculation: {e}")
+                else:
+                    print("Could not find a different tensor to compare for debugging.")
+                print("--------------------------\n")
+                TENSOR_SHAPE_DEBUG_FLAG = False # Turn off the flag after the first run
+            # --- END DEBUGGING BLOCK ---
+
+            similarities = torch.tensor([torch.nn.functional.cosine_similarity(voice.flatten(), other.flatten(), dim=0) for other in population if not torch.equal(voice, other)])
+
             if len(similarities) > 0:
                 avg_similarity = torch.mean(similarities).item()
                 # Normalize similarity to a 0-1 range where 1 is highly similar
