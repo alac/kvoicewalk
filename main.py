@@ -26,9 +26,6 @@ def main():
     parser.add_argument("--population_limit", type=int,
                       help="Limits the amount of voices used as part of the random walk",
                       default=10)
-    parser.add_argument("--step_limit", type=int,
-                      help="Limits the amount of steps in the random walk",
-                      default=10000)
     parser.add_argument("--output", type=str,
                       help="Filename for the generated output audio",
                       default="out.wav")
@@ -92,7 +89,36 @@ def main():
                         args.interpolate_start,
                         args.population_limit,
                         args.starting_voice)
-        ktb.random_walk(args.step_limit)
+
+        # balanced
+        MODE = "balanced"
+
+        if MODE == "balanced":
+            ktb.genetic_algorithm(
+                generations=100,
+                population_size=50,
+                initial_mutation_rate=.15,
+                crossover_rate=.8,
+                elitism_count=2,
+                crossover_type="blend",
+                diversity_weight=.1,
+                min_mutation_rate=.01,
+                max_mutation_rate=.5,
+                stagnation_threshold=.01                
+            )
+        elif MODE == "aggressive":
+            ktb.genetic_algorithm(
+                generations=200,
+                population_size=70,
+                initial_mutation_rate=.25,
+                crossover_rate=.9,
+                elitism_count=1,
+                crossover_type="blend",
+                diversity_weight=.2,
+                min_mutation_rate=.02,
+                max_mutation_rate=.6,
+                stagnation_threshold=.005                
+            )
 
 if __name__ == "__main__":
     main()
