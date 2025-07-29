@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 from fitness_scorer import FitnessScorer
 from initial_selector import InitialSelector
 from speech_generator import SpeechGenerator
@@ -26,74 +26,125 @@ class KVoiceWalk:
         # Either the mean or the supplied voice tensor
         self.starting_voice = self.voice_generator.starting_voice
 
-    def genetic_algorithm(self, generations: int, population_size: int, mutation_rate: float, crossover_rate: float, elitism_count: int):
+    def genetic_algorithm(self,
+                          generations: int,
+                          population_size: int,
+                          initial_mutation_rate: float,
+                          crossover_rate: float,
+                          elitism_count: int,
+                          crossover_type: str = 'blend',  # blend or single_point
+                          diversity_weight: float = 0.0,
+                          min_mutation_rate: float = 0.01,
+                          max_mutation_rate: float = 0.5,
+                          stagnation_threshold: float = 0.01):
         if not os.path.exists("./out"):
             os.makedirs("./out")
 
         # Initialize population
         population = [self.voice_generator.generate_voice(self.starting_voice, diversity=random.uniform(0.1, 0.5)) for _ in range(population_size)]
-        
+
+        # --- Adaptive Mutation Init ---
+        mutation_rate = initial_mutation_rate
+        last_best_score = 0.0
+
         for generation in range(generations):
-            # Score population
-            scores = [self.score_voice(voice) for voice in tqdm(population, desc=f"Generation {generation+1}/{generations}")]
-            
-            # Sort population by score
+            # Score population, including diversity calculation
+            scores = [self.score_voice(voice, population=population, diversity_weight=diversity_weight) for voice in tqdm(population, desc=f"Generation {generation+1}/{generations}")]
+
+            # Sort population by final score
             scored_population = sorted(zip(scores, population), key=lambda x: x[0]["score"], reverse=True)
-            
-            tqdm.write(f'Generation {generation+1} Best Score: {scored_population[0][0]["score"]:.2f}')
+
+            # --- Adaptive Mutation Logic ---
+            current_best_score = scored_population[0][0]["score"]
+            score_improvement = current_best_score - last_best_score
+            if generation > 0 and score_improvement < stagnation_threshold:
+                mutation_rate *= 1.2  # Increase mutation rate due to stagnation
+            else:
+                mutation_rate *= 0.95  # Decrease mutation rate towards minimum
+
+            # Clamp the mutation rate to defined bounds
+            mutation_rate = max(min_mutation_rate, min(mutation_rate, max_mutation_rate))
+            last_best_score = current_best_score
+
+            tqdm.write(f'Gen {generation+1}: Best Score={current_best_score:.2f} (Raw: {scored_population[0][0]["raw_score"]:.2f}), Mutation Rate={mutation_rate:.4f}')
 
             new_population = []
 
-            # Elitism
+            # Elitism: carry over the best individuals
             for i in range(elitism_count):
                 new_population.append(scored_population[i][1])
 
             # Selection, Crossover, and Mutation
             while len(new_population) < population_size:
-                # Tournament Selection
                 parent1 = self.tournament_selection(scored_population)
                 parent2 = self.tournament_selection(scored_population)
 
-                # Crossover
+                # --- Crossover Logic ---
                 if random.random() < crossover_rate:
-                    child1, child2 = self.voice_generator.crossover(parent1, parent2)
+                    if crossover_type == 'blend':
+                        child1, child2 = self.voice_generator.blend_crossover(parent1, parent2)
+                    else:  # Default to single_point
+                        child1, child2 = self.voice_generator.crossover(parent1, parent2)
                 else:
-                    child1, child2 = parent1, parent2
+                    child1, child2 = parent1.clone(), parent2.clone()
 
-                # Mutation
+                # --- Mutation Logic ---
                 if random.random() < mutation_rate:
-                    child1 = self.voice_generator.mutate(child1)
+                    child1 = self.voice_generator.mutate(child1, mutation_strength=mutation_rate)
                 if random.random() < mutation_rate:
-                    child2 = self.voice_generator.mutate(child2)
-                
+                    child2 = self.voice_generator.mutate(child2, mutation_strength=mutation_rate)
+
                 new_population.extend([child1, child2])
 
             population = new_population[:population_size]
 
-            # Save best voice of the generation
+            # Save best voice of the generation for review
             best_voice = scored_population[0][1]
-            best_score = scored_population[0][0]
-            torch.save(best_voice, f'out/gen_{generation+1}_best_voice_{best_score["score"]:.2f}.pt')
-            sf.write(f'out/gen_{generation+1}_best_voice_{best_score["score"]:.2f}.wav', self.score_voice(best_voice)['audio'], 24000)
+            best_score_info = scored_population[0][0]
+            torch.save(best_voice, f'out/gen_{generation+1}_best_voice_{best_score_info["score"]:.2f}.pt')
+            sf.write(f'out/gen_{generation+1}_best_voice_{best_score_info["score"]:.2f}.wav', best_score_info["audio"], 24000)
 
     def tournament_selection(self, scored_population, k=5):
-        tournament_entrants = random.sample(scored_population, k)
+        """Selects a parent by choosing the best out of a small random sample."""
+        sample_size = min(k, len(scored_population))
+        tournament_entrants = random.sample(scored_population, sample_size)
         winner = max(tournament_entrants, key=lambda x: x[0]["score"])
         return winner[1]
 
-    def score_voice(self,voice: torch.Tensor,min_similarity: float = 0.0) -> dict[str,Any]:
-        """Using a harmonic mean calculation to provide a score for the voice in similarity"""
+    def score_voice(self, voice: torch.Tensor, min_similarity: float = 0.0, population: List[torch.Tensor] = [], diversity_weight: float = 0.0) -> dict[str, Any]:
+        """Scores a voice based on similarity, with an optional penalty for being too similar to the rest of the population."""
         audio = self.speech_generator.generate_audio(self.target_text, voice)
         target_similarity = self.fitness_scorer.target_similarity(audio)
-        results: dict[str,Any] = {
-            'audio': audio
-        }
-        # Bail early and save the compute if the similarity sucks
+        results: dict[str, Any] = {'audio': audio}
+        raw_score = 0.0
+
         if target_similarity > min_similarity:
             audio2 = self.speech_generator.generate_audio(self.other_text, voice)
-            results.update(self.fitness_scorer.hybrid_similarity(audio,audio2,target_similarity))
+            hybrid_results = self.fitness_scorer.hybrid_similarity(audio, audio2, target_similarity)
+            results.update(hybrid_results)
+            raw_score = hybrid_results.get("score", 0.0)
         else:
             results["score"] = 0.0
             results["target_similarity"] = target_similarity
 
+        results["raw_score"] = raw_score
+
+        # --- Diversity Penalty Calculation ---
+        if diversity_weight > 0 and len(population) > 1:
+            # Use cosine similarity to measure how similar this voice is to others
+            similarities = torch.tensor([torch.nn.functional.cosine_similarity(voice, other, dim=0) for other in population if not torch.equal(voice, other)])
+            
+            if len(similarities) > 0:
+                avg_similarity = torch.mean(similarities).item()
+                # Normalize similarity to a 0-1 range where 1 is highly similar
+                avg_similarity_normalized = (avg_similarity + 1) / 2
+                # The penalty is a percentage of the raw score
+                penalty = avg_similarity_normalized * diversity_weight
+                final_score = raw_score * (1 - penalty)
+            else:
+                final_score = raw_score
+        else:
+            final_score = raw_score
+
+        results["score"] = final_score
         return results
