@@ -44,7 +44,8 @@ class KVoiceWalk:
             os.makedirs("./out")
 
         # Initialize population
-        population = [self.voice_generator.generate_voice(self.starting_voice, diversity=random.uniform(0.1, 0.5)) for _ in range(population_size)]
+        population = [self.voice_generator.generate_voice(self.starting_voice, diversity=random.uniform(0.1, 0.5)) for _ in range(population_size -1)]
+        population.append(self.starting_voice)
 
         # --- Adaptive Mutation Init ---
         mutation_rate = initial_mutation_rate
@@ -55,7 +56,8 @@ class KVoiceWalk:
             scores = [self.score_voice(voice, population=population, diversity_weight=diversity_weight) for voice in tqdm(population, desc=f"Generation {generation+1}/{generations}")]
 
             # Sort population by final score
-            scored_population = sorted(zip(scores, population), key=lambda x: x[0]["score"], reverse=True)
+            scored_population = sorted(zip(scores, population), key=lambda x: x[0]["score"], reverse=True)  # for evolution
+            raw_scored_population = sorted(zip(scores, population), key=lambda x: x[0]["raw_score"], reverse=True)  # for elitism
 
             # --- Adaptive Mutation Logic ---
             current_best_score = scored_population[0][0]["score"]
@@ -69,13 +71,14 @@ class KVoiceWalk:
             mutation_rate = max(min_mutation_rate, min(mutation_rate, max_mutation_rate))
             last_best_score = current_best_score
 
-            tqdm.write(f'Gen {generation+1}: Best Score={current_best_score:.2f} (Raw: {scored_population[0][0]["raw_score"]:.2f}), Mutation Rate={mutation_rate:.4f}')
+            # Note: raw_score is similarity to the target, score is weighted by value to the genetic algo (e.g. how diverse does it make the gene pool)
+            tqdm.write(f'Gen {generation+1}: Best Score={current_best_score:.2f} (Raw: {raw_scored_population[0][0]["raw_score"]:.2f}), Mutation Rate={mutation_rate:.4f}')
 
             new_population = []
 
             # Elitism: carry over the best individuals
             for i in range(elitism_count):
-                new_population.append(scored_population[i][1])
+                new_population.append(raw_scored_population[i][1])
 
             # Selection, Crossover, and Mutation
             while len(new_population) < population_size:
@@ -104,8 +107,8 @@ class KVoiceWalk:
             # Save best voice of the generation for review
             best_voice = scored_population[0][1]
             best_score_info = scored_population[0][0]
-            torch.save(best_voice, f'out/gen_{generation+1}_best_voice_{best_score_info["score"]:.2f}.pt')
-            sf.write(f'out/gen_{generation+1}_best_voice_{best_score_info["score"]:.2f}.wav', best_score_info["audio"], 24000)
+            torch.save(best_voice, f'out/gen_{generation+1}_best_voice_{best_score_info["raw_score"]:.2f}.pt')
+            sf.write(f'out/gen_{generation+1}_best_voice_{best_score_info["raw_score"]:.2f}.wav', best_score_info["audio"], 24000)
 
     def tournament_selection(self, scored_population, k=5):
         """Selects a parent by choosing the best out of a small random sample."""
