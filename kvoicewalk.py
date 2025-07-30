@@ -50,7 +50,7 @@ class KVoiceWalk:
         mutation_rate = initial_mutation_rate
         last_best_score = 0.0
 
-        for generation in range(generations):
+        for generation in tqdm(range(generations), desc="Computing generations..."):
             # Score population, including diversity calculation
             scores = [self.score_voice(voice, population=population, diversity_weight=diversity_weight) for voice in tqdm(population, desc=f"Generation {generation+1}/{generations}")]
 
