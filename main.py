@@ -90,8 +90,8 @@ def main():
                         args.population_limit,
                         args.starting_voice)
 
-        # balanced
-        MODE = "balanced"
+        # param testing
+        MODE = "aggressive"
 
         if MODE == "balanced":
             ktb.genetic_algorithm(
@@ -112,7 +112,7 @@ def main():
                 population_size=70,
                 initial_mutation_rate=.25,
                 crossover_rate=.9,
-                elitism_count=1,
+                elitism_count=2,
                 crossover_type="blend",
                 diversity_weight=.2,
                 min_mutation_rate=.02,
