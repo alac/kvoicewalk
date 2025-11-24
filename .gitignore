@@ -17,3 +17,7 @@ genned_voices/
 interpolated/
 /*.wav
 *.bin
+
+export_code.txt
+example.txt
+kvoicewalk.llmexport
