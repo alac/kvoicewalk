@@ -10,8 +10,16 @@ import numpy as np
 import torch
 import os
 
-# --- Add this line at the top of the file ---
+
 TENSOR_SHAPE_DEBUG_FLAG = False
+VALIDATION_SENTENCES = [
+    "The quick brown fox jumps over the lazy dog.",
+    "She sells sea shells by the sea shore.",
+    "I am trying to optimize this voice vector.",
+    "Technological progress has merely provided us with more efficient means.",
+    "It was the best of times, it was the worst of times."
+]
+
 
 class KVoiceWalk:
     def __init__(self,target_audio: str,target_text: str,other_text:str,voice_folder:str,interpolate_start: bool,population_limit: int, starting_voice: str) -> None:
@@ -118,16 +126,21 @@ class KVoiceWalk:
         return winner[1]
 
     def score_voice(self, voice: torch.Tensor, min_similarity: float = 0.0, population: List[torch.Tensor] = [], diversity_weight: float = 0.0) -> dict[str, Any]:
-        """Scores a voice based on similarity, with an optional penalty for being too similar to the rest of the population."""
         global TENSOR_SHAPE_DEBUG_FLAG # Use the global flag to ensure this runs only once
-
+        
+        # 1. Generate Main Target
         audio = self.speech_generator.generate_audio(self.target_text, voice)
         target_similarity = self.fitness_scorer.target_similarity(audio)
+        
         results: dict[str, Any] = {'audio': audio}
-        raw_score = 0.0
-
+        
+        # 2. Generate Validation (Random Sentence)
+        # This ensures the voice is stable regardless of what it says
+        random_text = random.choice(VALIDATION_SENTENCES) 
+        
         if target_similarity > min_similarity:
-            audio2 = self.speech_generator.generate_audio(self.other_text, voice)
+            audio2 = self.speech_generator.generate_audio(random_text, voice)
+            # Pass the random text audio to your scorer
             hybrid_results = self.fitness_scorer.hybrid_similarity(audio, audio2, target_similarity)
             results.update(hybrid_results)
             raw_score = hybrid_results.get("score", 0.0)

@@ -49,10 +49,11 @@ class VoiceGenerator:
         return new_tensor
 
     def crossover(self, parent1: torch.Tensor, parent2: torch.Tensor):
-        """Perform a single point crossover between two parent tensors."""
-        point = random.randint(1, parent1.size(0) - 1)
-        child1 = torch.cat((parent1[:point], parent2[point:]), dim=0)
-        child2 = torch.cat((parent2[:point], parent1[point:]), dim=0)
+        # FORCE BLEND. Single point crossover destroys latent vector coherence.
+        # We mix 30-70% of one parent with the other.
+        alpha = random.uniform(0.3, 0.7)
+        child1 = alpha * parent1 + (1 - alpha) * parent2
+        child2 = (1 - alpha) * parent1 + alpha * parent2
         return child1, child2
 
     def blend_crossover(self, parent1: torch.Tensor, parent2: torch.Tensor, alpha: float = 0.5):
@@ -62,6 +63,8 @@ class VoiceGenerator:
         return child1, child2
 
     def mutate(self, voice: torch.Tensor, mutation_strength: float = 0.05):
-        """Apply mutation to a voice tensor."""
-        mutation = torch.randn_like(voice) * self.std.to(voice.device) * mutation_strength
+        # Use the standard deviation of THIS voice vector, not the global dataset.
+        # This scales the mutation to fit the current vector's range.
+        scale = voice.std().item()
+        mutation = torch.randn_like(voice) * scale * mutation_strength
         return voice + mutation
