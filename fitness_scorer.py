@@ -13,7 +13,7 @@ class FitnessScorer:
     # =========================================================================
     WEIGHTS = {
         # --- 1. IDENTITY (Who is speaking?) ---
-        "resemblyzer_cosine":   40.0,  # The heavy hitter for identity
+        "resemblyzer_cosine":   20.0,  # The heavy hitter for identity
 
         # --- 2. TIMBRE (The "Body" & "Fullness") ---
         # MFCCs capture the shape of the vocal tract. 
@@ -154,10 +154,12 @@ class FitnessScorer:
             'rms': 0, 'max_amp': 0, 'dc_offset': 0
         }
 
-    def hybrid_similarity(self, audio: NDArray[np.float32], audio2: NDArray[np.float32], target_similarity: float):
+    def hybrid_similarity(self, audio: NDArray[np.float32], audio2: NDArray[np.float32], target_similarity: float, override_weights=None):
         """
         The main scoring entry point.
         """
+        weights = override_weights if override_weights else self.WEIGHTS
+
         # 1. Identity Check (Resemblyzer) - Already passed as target_similarity
         # But we also want self-similarity (audio1 vs audio2) to ensure stability
         self_sim = self.self_similarity(audio, audio2)

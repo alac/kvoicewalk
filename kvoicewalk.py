@@ -64,8 +64,19 @@ class KVoiceWalk:
         MIN_MUTATION_STRENGTH = 0.02 # Never let mutation drop below this
 
         for generation in tqdm(range(generations), desc="Computing generations..."):
+            # Calculate a progress factor (0.0 to 1.0) inside the generation loop
+            progress = generation / generations
+
+            # Define dynamic weights
+            # Start Identity at 5.0, ramp up to 30.0
+            # Start Timbre (MFCC) at 20.0, ramp down to 10.0
+            current_weights = self.fitness_scorer.WEIGHTS.copy()
+            current_weights["resemblyzer_cosine"] = 5.0 + (25.0 * progress) 
+            current_weights["mfcc_mean_dist"] = 20.0 - (10.0 * progress)
+
             # Score population, including diversity calculation
-            scores = [self.score_voice(voice, population=population, diversity_weight=diversity_weight) for voice in tqdm(population, desc=f"Generation {generation+1}/{generations}")]
+            scores = [self.score_voice(voice, population=population, diversity_weight=diversity_weight, override_weights=current_weights)
+                      for voice in tqdm(population, desc=f"Generation {generation+1}/{generations}")]
 
             # Sort population by final score
             # Sort population
@@ -125,7 +136,7 @@ class KVoiceWalk:
         winner = max(tournament_entrants, key=lambda x: x[0]["score"])
         return winner[1]
 
-    def score_voice(self, voice: torch.Tensor, min_similarity: float = 0.0, population: List[torch.Tensor] = [], diversity_weight: float = 0.0) -> dict[str, Any]:
+    def score_voice(self, voice: torch.Tensor, min_similarity: float = 0.0, population: List[torch.Tensor] = [], diversity_weight: float = 0.0, override_weights=None) -> dict[str, Any]:
         global TENSOR_SHAPE_DEBUG_FLAG # Use the global flag to ensure this runs only once
         
         # 1. Generate Main Target
@@ -141,7 +152,7 @@ class KVoiceWalk:
         if target_similarity > min_similarity:
             audio2 = self.speech_generator.generate_audio(random_text, voice)
             # Pass the random text audio to your scorer
-            hybrid_results = self.fitness_scorer.hybrid_similarity(audio, audio2, target_similarity)
+            hybrid_results = self.fitness_scorer.hybrid_similarity(audio, audio2, target_similarity, override_weights=override_weights)
             results.update(hybrid_results)
             raw_score = hybrid_results.get("score", 0.0)
         else:
