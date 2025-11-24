@@ -124,9 +124,24 @@ class VoiceGenerator:
         child2 = (1 - alpha) * parent1 + alpha * parent2
         return child1, child2
 
-    def mutate(self, voice: torch.Tensor, mutation_strength: float = 0.05):
-        # Use the standard deviation of THIS voice vector, not the global dataset.
-        # This scales the mutation to fit the current vector's range.
+    def mutate(self, voice: torch.Tensor, mutation_strength: float = 0.05, sparse_prob: float = 0.2):
+        """
+        Applies mutation to only a percentage of the dimensions (sparse_prob).
+        This allows distinct traits to change without destroying the whole voice structure.
+        """
+        # Get the standard deviation of this specific voice for scaling
         scale = voice.std().item()
-        mutation = torch.randn_like(voice) * scale * mutation_strength
-        return voice + mutation
+        
+        # Create a mask: 1 where we mutate, 0 where we keep original
+        # Bernoulli distribution creates a binary mask
+        mask = torch.bernoulli(torch.full_like(voice, sparse_prob)).bool()
+        
+        # Generate noise
+        # We increase strength slightly because we are applying it less often
+        noise = torch.randn_like(voice) * scale * (mutation_strength * 3.0)
+        
+        # Apply noise only where mask is True
+        mutated_voice = voice.clone()
+        mutated_voice[mask] += noise[mask]
+        
+        return mutated_voice

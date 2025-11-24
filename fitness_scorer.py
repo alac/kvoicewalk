@@ -13,24 +13,24 @@ class FitnessScorer:
     # =========================================================================
     WEIGHTS = {
         # --- 1. IDENTITY (Who is speaking?) ---
-        "resemblyzer_cosine":   40.0,  # The heavy hitter for identity
+        "resemblyzer_cosine":   20.0,  # The heavy hitter for identity
 
         # --- 2. TIMBRE (The "Body" & "Fullness") ---
         # MFCCs capture the shape of the vocal tract. 
-        "mfcc_mean_dist":       15.0,  # General tone match
+        "mfcc_mean_dist":       20.0,  # General tone match
         "mfcc_std_dist":        5.0,   # Expressiveness match
         
         # --- 3. SPECTRAL SHAPE (Brightness vs Dark/Full) ---
-        "spectral_centroid":    5.0,   # Brightness (Center of mass)
+        "spectral_centroid":    0.0, # 5.0,   # Brightness (Center of mass)
         "spectral_bandwidth":   5.0,   # Width of frequency band
-        "spectral_rolloff":     10.0,  # Bass/Treble balance (Crucial for "depth")
+        "spectral_rolloff":     15.0,  # Bass/Treble balance (Crucial for "depth")
         "spectral_contrast":    5.0,   # Peak/Valley distinction (clarity)
         "spectral_flatness":    5.0,   # Noise-like vs Tone-like
 
         # --- 4. PITCH & INTONATION (Prosody) ---
         # Note: F0 estimation is slow. Set to 0.0 if generation is too slow.
-        "f0_mean_error":        0.0, # 5.0,   # Average pitch match
-        "f0_std_error":         0.0, # 2.0,   # Dynamic range of pitch
+        "f0_mean_error":        15.0,   # Average pitch match
+        "f0_std_error":         5.0,   # Dynamic range of pitch
         
         # --- 5. QUALITY & TEXTURE ---
         "hnr_ratio":            10.0,  # Harmonic-to-Noise (Cleanliness vs Breathiness)
@@ -154,10 +154,12 @@ class FitnessScorer:
             'rms': 0, 'max_amp': 0, 'dc_offset': 0
         }
 
-    def hybrid_similarity(self, audio: NDArray[np.float32], audio2: NDArray[np.float32], target_similarity: float):
+    def hybrid_similarity(self, audio: NDArray[np.float32], audio2: NDArray[np.float32], target_similarity: float, override_weights=None):
         """
         The main scoring entry point.
         """
+        weights = override_weights if override_weights else self.WEIGHTS
+
         # 1. Identity Check (Resemblyzer) - Already passed as target_similarity
         # But we also want self-similarity (audio1 vs audio2) to ensure stability
         self_sim = self.self_similarity(audio, audio2)
