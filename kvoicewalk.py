@@ -85,7 +85,7 @@ class KVoiceWalk:
                 parent1 = self.tournament_selection(scored_population)
                 parent2 = self.tournament_selection(scored_population)
 
-                child1, child2 = self.voice_generator.crossover(parent1, parent2)
+                child1, child2 = self.voice_generator.crossover(parent1, parent2, method=crossover_type)
 
                 # DYNAMIC MUTATION
                 # Increase mutation if score is stagnating

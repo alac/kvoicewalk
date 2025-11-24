@@ -48,13 +48,75 @@ class VoiceGenerator:
 
         return new_tensor
 
-    def crossover(self, parent1: torch.Tensor, parent2: torch.Tensor):
-        # FORCE BLEND. Single point crossover destroys latent vector coherence.
-        # We mix 30-70% of one parent with the other.
-        alpha = random.uniform(0.3, 0.7)
-        child1 = alpha * parent1 + (1 - alpha) * parent2
-        child2 = (1 - alpha) * parent1 + alpha * parent2
+    def crossover(self, parent1: torch.Tensor, parent2: torch.Tensor, method: str = 'slerp'):
+        """
+        Combines two parents into two children.
+        Methods:
+            'blend': Linear interpolation.
+            'slerp': Spherical Linear Interpolation (better for high-dim vectors).
+        """
+        # 1. Determine Alpha (The Mix Ratio)
+        # OLD: alpha = random.uniform(0.3, 0.7) -> Causes convergence to mean
+        # NEW: Extrapolative range. Allow going slightly "past" the parents.
+        # Range [-0.2, 1.2] allows exploring outside the box defined by parents.
+        alpha = random.uniform(-0.2, 1.2) 
+
+        if method == 'slerp':
+            # SLERP handles the curve, but we still use our extrapolative alpha
+            child1 = self.slerp(parent1, parent2, alpha)
+            child2 = self.slerp(parent1, parent2, 1.0 - alpha)
+        else:
+            # Linear Extrapolation
+            child1 = alpha * parent1 + (1 - alpha) * parent2
+            child2 = (1 - alpha) * parent1 + alpha * parent2
+
+        # CRITICAL: Extrapolation can push values too high/low, causing audio artifacts.
+        # Clamp children to the global min/max observed in your init.
+        child1 = torch.clamp(child1, self.min.to(child1.device), self.max.to(child1.device))
+        child2 = torch.clamp(child2, self.min.to(child2.device), self.max.to(child2.device))
+
         return child1, child2
+
+    def slerp(self, p1: torch.Tensor, p2: torch.Tensor, t: float, dot_threshold: float = 0.9995):
+        """
+        Spherical Linear Interpolation.
+        Preserves the "magnitude" (energy) of the voice better than linear blending.
+        """
+        # 1. Compute properties
+        p1_norm = torch.norm(p1)
+        p2_norm = torch.norm(p2)
+        
+        # Normalize vectors for angle calculation
+        p1_u = p1 / p1_norm
+        p2_u = p2 / p2_norm
+
+        # 2. Calculate Dot Product (Cosine of angle)
+        dot = torch.sum(p1_u * p2_u)
+
+        # 3. Handle Parallel Vectors (Standard Linear Interpolation fallback)
+        if torch.abs(dot) > dot_threshold:
+            result = (1.0 - t) * p1 + t * p2
+            return result
+
+        # 4. Calculate Angle (Omega)
+        # Clamp for numerical stability (acos requires -1 to 1)
+        dot = torch.clamp(dot, -1.0, 1.0)
+        omega = torch.acos(dot)
+        sin_omega = torch.sin(omega)
+
+        # 5. Calculate Interpolation
+        # Note: We interpolate the Magnitude separately from the Direction
+        # to handle cases where parents have very different loudness/intensities.
+        
+        # Directional interpolation
+        scale0 = torch.sin((1.0 - t) * omega) / sin_omega
+        scale1 = torch.sin(t * omega) / sin_omega
+        direction = scale0 * p1_u + scale1 * p2_u
+        
+        # Magnitude interpolation (Linear)
+        mag = (1.0 - t) * p1_norm + t * p2_norm
+        
+        return direction * mag
 
     def blend_crossover(self, parent1: torch.Tensor, parent2: torch.Tensor, alpha: float = 0.5):
         """Performs a blend crossover between two parent tensors."""
