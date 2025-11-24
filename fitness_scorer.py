@@ -29,8 +29,8 @@ class FitnessScorer:
 
         # --- 4. PITCH & INTONATION (Prosody) ---
         # Note: F0 estimation is slow. Set to 0.0 if generation is too slow.
-        "f0_mean_error":        5.0,   # Average pitch match
-        "f0_std_error":         2.0,   # Dynamic range of pitch
+        "f0_mean_error":        0.0, # 5.0,   # Average pitch match
+        "f0_std_error":         0.0, # 2.0,   # Dynamic range of pitch
         
         # --- 5. QUALITY & TEXTURE ---
         "hnr_ratio":            10.0,  # Harmonic-to-Noise (Cleanliness vs Breathiness)
