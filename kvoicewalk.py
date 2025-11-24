@@ -57,60 +57,56 @@ class KVoiceWalk:
 
         # --- Adaptive Mutation Init ---
         mutation_rate = initial_mutation_rate
-        last_best_score = 0.0
+
+        # PARAMETERS
+        FRESH_BLOOD_RATE = 0.1  # Replace bottom 10% with random voices every gen
+        MIN_MUTATION_STRENGTH = 0.02 # Never let mutation drop below this
 
         for generation in tqdm(range(generations), desc="Computing generations..."):
             # Score population, including diversity calculation
             scores = [self.score_voice(voice, population=population, diversity_weight=diversity_weight) for voice in tqdm(population, desc=f"Generation {generation+1}/{generations}")]
 
             # Sort population by final score
-            scored_population = sorted(zip(scores, population), key=lambda x: x[0]["score"], reverse=True)  # for evolution
-            raw_scored_population = sorted(zip(scores, population), key=lambda x: x[0]["raw_score"], reverse=True)  # for elitism
+            # Sort population
+            scored_population = sorted(zip(scores, population), key=lambda x: x[0]["score"], reverse=True)
+        
+            # Print stats
+            best = scored_population[0][0]
+            tqdm.write(f'Gen {generation+1}: Best Score={best["score"]:.2f} | ID:{best["target_similarity"]:.2f} Tone:{best["tone_score"]:.2f} Cents:{best["cents"]}')
 
-            # --- Adaptive Mutation Logic ---
-            current_best_score = scored_population[0][0]["score"]
-            score_improvement = current_best_score - last_best_score
-            if generation > 0 and score_improvement < stagnation_threshold:
-                mutation_rate *= 1.2  # Increase mutation rate due to stagnation
-            else:
-                mutation_rate *= 0.95  # Decrease mutation rate towards minimum
+            # ELITISM (Keep top 10%)
+            new_population = [x[1] for x in scored_population[:int(population_size * 0.1)]]
 
-            # Clamp the mutation rate to defined bounds
-            mutation_rate = max(min_mutation_rate, min(mutation_rate, max_mutation_rate))
-            last_best_score = current_best_score
-
-            # Note: raw_score is similarity to the target, score is weighted by value to the genetic algo (e.g. how diverse does it make the gene pool)
-            tqdm.write(f'Gen {generation+1}: Best Score={current_best_score:.2f} (Raw: {raw_scored_population[0][0]["raw_score"]:.2f}), Mutation Rate={mutation_rate:.4f}')
-
-            new_population = []
-
-            # Elitism: carry over the best individuals
-            for i in range(elitism_count):
-                new_population.append(raw_scored_population[i][1])
-
-            # Selection, Crossover, and Mutation
-            while len(new_population) < population_size:
+            # BREEDING LOOP
+            # We fill up to 90% of population size
+            target_count = int(population_size * (1 - FRESH_BLOOD_RATE))
+            
+            while len(new_population) < target_count:
                 parent1 = self.tournament_selection(scored_population)
                 parent2 = self.tournament_selection(scored_population)
 
-                # --- Crossover Logic ---
-                if random.random() < crossover_rate:
-                    if crossover_type == 'blend':
-                        child1, child2 = self.voice_generator.blend_crossover(parent1, parent2)
-                    else:  # Default to single_point
-                        child1, child2 = self.voice_generator.crossover(parent1, parent2)
-                else:
-                    child1, child2 = parent1.clone(), parent2.clone()
+                child1, child2 = self.voice_generator.crossover(parent1, parent2)
 
-                # --- Mutation Logic ---
-                if random.random() < mutation_rate:
-                    child1 = self.voice_generator.mutate(child1, mutation_strength=mutation_rate)
-                if random.random() < mutation_rate:
-                    child2 = self.voice_generator.mutate(child2, mutation_strength=mutation_rate)
-
+                # DYNAMIC MUTATION
+                # Increase mutation if score is stagnating
+                current_mutation = max(MIN_MUTATION_STRENGTH, mutation_rate)
+                
+                if random.random() < current_mutation:
+                    child1 = self.voice_generator.mutate(child1, mutation_strength=current_mutation)
+                if random.random() < current_mutation:
+                    child2 = self.voice_generator.mutate(child2, mutation_strength=current_mutation)
+                
                 new_population.extend([child1, child2])
+            
+            # FRESH BLOOD INJECTION
+            # Fill the remaining slots with purely random noise voices
+            # This forces the GA to look at completely new areas of the vector space
+            while len(new_population) < population_size:
+                # Generate a fresh random voice based on the GLOBAL mean/std
+                fresh_voice = self.voice_generator.generate_voice(None, diversity=1.0) 
+                new_population.append(fresh_voice)
 
-            population = new_population[:population_size]
+            population = new_population
 
             # Save best voice of the generation for review
             best_voice = scored_population[0][1]
