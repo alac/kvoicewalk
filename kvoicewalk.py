@@ -19,6 +19,7 @@ VALIDATION_SENTENCES = [
     "Technological progress has merely provided us with more efficient means.",
     "It was the best of times, it was the worst of times."
 ]
+CONTROL_SENTENCE = "The birch canoe slid on the smooth planks. Glue the sheet to the dark blue background."
 
 
 class KVoiceWalk:
@@ -111,8 +112,11 @@ class KVoiceWalk:
             # Save best voice of the generation for review
             best_voice = scored_population[0][1]
             best_score_info = scored_population[0][0]
-            torch.save(best_voice, f'out/gen_{generation+1}_best_voice_{best_score_info["raw_score"]:.2f}.pt')
-            sf.write(f'out/gen_{generation+1}_best_voice_{best_score_info["raw_score"]:.2f}.wav', best_score_info["audio"], 24000)
+            torch.save(best_voice, f'out/gen_{generation+1}_best.pt')
+            sf.write(f'out/gen_{generation+1}_target.wav', best_score_info["audio"], 24000)
+
+            control_audio = self.speech_generator.generate_audio(CONTROL_SENTENCE, best_voice, speed=1.0)
+            sf.write(f'out/gen_{generation+1}_control.wav', control_audio, 24000)
 
     def tournament_selection(self, scored_population, k=5):
         """Selects a parent by choosing the best out of a small random sample."""
