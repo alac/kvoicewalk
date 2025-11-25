@@ -4,6 +4,8 @@ import librosa
 import traceback
 from numpy._typing import NDArray
 from resemblyzer import preprocess_wav, VoiceEncoder
+import scipy.stats
+
 
 class FitnessScorer:
     # =========================================================================
@@ -41,6 +43,10 @@ class FitnessScorer:
         "silence_penalty":      20.0,  # Huge penalty for silence
         "dc_offset_penalty":    5.0,   # Signal centering
         "rms_level_diff":       5.0,   # Volume matching
+
+        # --- DYNAMICS (How the voice moves) ---
+        "mfcc_delta_dist":      10.0,  # Matches the speed/articulation style
+        "kurtosis_dist":        5.0,   # Matches the "grain/texture" of the audio
     }
 
     def __init__(self, target_path: str):
@@ -106,6 +112,15 @@ class FitnessScorer:
         stats['mfcc_mean'] = np.mean(mfcc, axis=1) # Shape (20,)
         stats['mfcc_std'] = np.std(mfcc, axis=1)   # Shape (20,)
 
+        # --- DELTAS (Articulation/Velocity) ---
+        # delta calculates the first derivative (rate of change)
+        mfcc_delta = librosa.feature.delta(mfcc)
+        stats['mfcc_delta_mean'] = np.mean(mfcc_delta, axis=1)
+        stats['mfcc_delta_std'] = np.std(mfcc_delta, axis=1)
+
+        # --- KURTOSIS (Texture) ---
+        stats['kurtosis'] = scipy.stats.kurtosis(y)
+
         # --- PITCH (F0) ---
         # Using Yin implementation if available (faster), else pyin
         # F0 estimation is heavy. Skip if weight is 0.
@@ -150,6 +165,8 @@ class FitnessScorer:
             'mean_centroid': 0, 'mean_bandwidth': 0, 'mean_rolloff': 0,
             'mean_contrast': 0, 'mean_flatness': 0, 
             'mfcc_mean': np.zeros(20), 'mfcc_std': np.zeros(20),
+            'mfcc_delta_mean': np.zeros(20), 'mfcc_delta_std': np.zeros(20),
+            'kurtosis': 0,
             'mean_f0': 0, 'std_f0': 0, 'hnr': 0,
             'rms': 0, 'max_amp': 0, 'dc_offset': 0
         }
@@ -240,6 +257,21 @@ class FitnessScorer:
             
             elif metric == "rms_level_diff":
                 val = self._score_scalar_diff(gen_stats['rms'], self.target_stats['rms'], tolerance=0.3)
+
+            # --- DYNAMICS ---
+            elif metric == "mfcc_delta_dist":
+                # Compare the "Mean Delta" (Average speed of articulation)
+                dist_mean = np.linalg.norm(gen_stats['mfcc_delta_mean'] - self.target_stats['mfcc_delta_mean'])
+                # Compare the "Std Delta" (Dynamic range of articulation)
+                dist_std = np.linalg.norm(gen_stats['mfcc_delta_std'] - self.target_stats['mfcc_delta_std'])
+                
+                # Combine them. Lower distance is better.
+                # Delta distances are usually small (0.5 - 5.0)
+                combined_dist = (dist_mean + dist_std)
+                val = max(0.0, 1.0 - (combined_dist / 5.0))
+
+            elif metric == "kurtosis_dist":
+                val = self._score_scalar_diff(gen_stats['kurtosis'], self.target_stats['kurtosis'], tolerance=0.2)
 
             # Accumulate
             scores[metric] = val
