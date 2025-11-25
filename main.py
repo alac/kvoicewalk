@@ -95,7 +95,7 @@ def main():
 
         if MODE == "balanced":
             ktb.genetic_algorithm(
-                generations=100,
+                generations=50,
                 population_size=50,
                 initial_mutation_rate=.15,
                 crossover_rate=.8,
@@ -108,7 +108,7 @@ def main():
             )
         elif MODE == "aggressive":
             ktb.genetic_algorithm(
-                generations=200,
+                generations=50,
                 population_size=70,
                 initial_mutation_rate=.25,
                 crossover_rate=.9,
